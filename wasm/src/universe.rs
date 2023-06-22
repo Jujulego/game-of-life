@@ -1,57 +1,19 @@
-use wasm_bindgen::prelude::wasm_bindgen;
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
 use py::wasm::Vector2D;
-use wasm_bindgen::JsValue;
+use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
+use crate::universe_style::UniverseStyle;
+
 use crate::utils::{cmp_zorder, DIRECTIONS};
 
 /// Life universe
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    size: Vector2<usize>,
     cells: Vec<Point2<i32>>,
-}
-
-impl Universe {
-    /// Returns index of point in cells vector (where it is, or where it should be)
-    fn index_of(&self, point: &Point2<i32>) -> Result<usize, usize> {
-        self.cells.binary_search_by(|pt| cmp_zorder(pt, point))
-    }
-
-    /// Check if cell at given point is alive
-    fn is_alive(&self, point: &Point2<i32>) -> bool {
-        self.index_of(point).is_ok()
-    }
-
-    /// Set cell at given point alive
-    fn set_alive(&mut self, point: &Point2<i32>) {
-        if let Err(idx) = self.index_of(point) {
-            self.cells.insert(idx, *point);
-        }
-    }
-
-    /// Set cell at given point dead
-    fn set_dead(&mut self, point: &Point2<i32>) {
-        if let Ok(idx) = self.index_of(point) {
-            self.cells.remove(idx);
-        }
-    }
-
-    /// Count alive neighbors of given point
-    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
-        DIRECTIONS
-            .iter()
-            .filter(move |&d| {
-                let mut neighbor = point + d;
-                neighbor[0] %= self.size[0] as i32;
-                neighbor[1] %= self.size[1] as i32;
-
-                self.is_alive(&neighbor)
-            })
-            .count()
-    }
+    size: Vector2<usize>,
+    style: UniverseStyle,
 }
 
 #[wasm_bindgen]
@@ -59,8 +21,9 @@ impl Universe {
     /// Builds a dead universe
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
-            size: vector![width, height],
             cells: Vec::new(),
+            size: vector![width, height],
+            style: UniverseStyle::default(),
         }
     }
 
@@ -103,22 +66,80 @@ impl Universe {
     }
 
     /// Render universe inside canvas
-    pub fn render(&self, ctx: &CanvasRenderingContext2d, alive: &JsValue, dead: &JsValue) {
+    pub fn render(&self, ctx: &CanvasRenderingContext2d) {
+        let size = self.size.cast() * self.style.cell_size();
+
         ctx.begin_path();
 
-        ctx.set_fill_style(dead);
-        ctx.fill_rect(0.0, 0.0, (self.size[0] * 5) as f64, (self.size[1] * 5) as f64);
+        ctx.set_fill_style(self.style.dead_color());
+        ctx.fill_rect(0.0, 0.0, size[0], size[1]);
 
-        ctx.set_fill_style(alive);
+        ctx.set_fill_style(self.style.alive_color());
 
         for cell in self.cells.iter() {
-            ctx.fill_rect((cell[0] * 5) as f64, (cell[1] * 5) as f64, 5.0, 5.0);
+            let pos = cell.cast() * self.style.cell_size();
+
+            ctx.fill_rect(
+                pos[0], pos[1],
+                self.style.cell_size(), self.style.cell_size()
+            );
         }
 
         ctx.stroke();
     }
 
+    #[wasm_bindgen(getter)]
     pub fn size(&self) -> Vector2D {
         Vector2D::from(self.size.cast())
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn style(&self) -> UniverseStyle {
+        self.style.clone()
+    }
+
+    #[wasm_bindgen(setter)]
+    pub fn set_style(&mut self, style: UniverseStyle) {
+        self.style = style
+    }
+}
+
+impl Universe {
+    /// Returns index of point in cells vector (where it is, or where it should be)
+    fn index_of(&self, point: &Point2<i32>) -> Result<usize, usize> {
+        self.cells.binary_search_by(|pt| cmp_zorder(pt, point))
+    }
+
+    /// Check if cell at given point is alive
+    fn is_alive(&self, point: &Point2<i32>) -> bool {
+        self.index_of(point).is_ok()
+    }
+
+    /// Set cell at given point alive
+    fn set_alive(&mut self, point: &Point2<i32>) {
+        if let Err(idx) = self.index_of(point) {
+            self.cells.insert(idx, *point);
+        }
+    }
+
+    /// Set cell at given point dead
+    fn set_dead(&mut self, point: &Point2<i32>) {
+        if let Ok(idx) = self.index_of(point) {
+            self.cells.remove(idx);
+        }
+    }
+
+    /// Count alive neighbors of given point
+    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
+        DIRECTIONS
+            .iter()
+            .filter(move |&d| {
+                let mut neighbor = point + d;
+                neighbor[0] %= self.size[0] as i32;
+                neighbor[1] %= self.size[1] as i32;
+
+                self.is_alive(&neighbor)
+            })
+            .count()
     }
 }

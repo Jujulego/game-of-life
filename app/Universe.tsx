@@ -5,13 +5,11 @@ import { useEffect, useRef, useState } from 'react';
 
 // Constants
 const CELL_SIZE = 5;
-const DEAD_COLOR = "#000000";
-const ALIVE_COLOR = "#FFFFFF";
 const FRAME_RATE = 100;
 
 // Component
 export default function Universe() {
-  const { Universe } = useWasmModule();
+  const { Universe, UniverseStyle } = useWasmModule();
 
   // State
   const [universe] = useState(() => Universe.random(256, 128));
@@ -24,12 +22,17 @@ export default function Universe() {
     if (!canvas.current) return;
 
     // Setup canvas
-    const size = universe.size();
+    const size = universe.size;
+
     canvas.current.width = size.dx * CELL_SIZE;
     canvas.current.height = size.dy * CELL_SIZE;
 
+    // Setup universe
+    universe.style = UniverseStyle.dark();
+
     // Animate !
     const ctx = canvas.current.getContext('2d')!;
+
     let frame: number;
     let last = 0;
 
@@ -39,7 +42,7 @@ export default function Universe() {
 
         // Update state
         universe.tick();
-        universe.render(ctx, ALIVE_COLOR, DEAD_COLOR);
+        universe.render(ctx);
       }
 
       frame = requestAnimationFrame(loop);
