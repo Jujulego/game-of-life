@@ -1,6 +1,6 @@
 'use client'
 
-import { useWasmMemory, useWasmModule } from '@/hooks/useWasmModule';
+import { useWasmModule } from '@/hooks/useWasmModule';
 import { useEffect, useRef, useState } from 'react';
 
 // Constants
@@ -11,8 +11,7 @@ const FRAME_RATE = 100;
 
 // Component
 export default function Universe() {
-  const { Cell, Universe } = useWasmModule();
-  const memory = useWasmMemory();
+  const { Universe } = useWasmModule();
 
   // State
   const [universe] = useState(() => Universe.random(256, 128));
@@ -40,22 +39,7 @@ export default function Universe() {
 
         // Update state
         universe.tick();
-
-        // Draw cells
-        const cells = new Uint8Array(memory.buffer, universe.cells(), size.dx * size.dy);
-
-        ctx.beginPath();
-
-        for (let row = 0; row < size.dy; ++row) {
-          for (let col = 0; col < size.dx; ++col) {
-            const idx = row * size.dx + col;
-
-            ctx.fillStyle = cells[idx] === Cell.Alive ? ALIVE_COLOR : DEAD_COLOR;
-            ctx.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-          }
-        }
-
-        ctx.stroke();
+        universe.render(ctx, ALIVE_COLOR, DEAD_COLOR);
       }
 
       frame = requestAnimationFrame(loop);

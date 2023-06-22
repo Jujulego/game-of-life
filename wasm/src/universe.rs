@@ -1,9 +1,11 @@
 use wasm_bindgen::prelude::wasm_bindgen;
-use js_sys::Math;
+use js_sys::{JsString, Math};
 use std::fmt;
 use std::fmt::Formatter;
 use na::{vector, Vector2};
 use py::wasm::Vector2D;
+use wasm_bindgen::JsValue;
+use web_sys::CanvasRenderingContext2d;
 use crate::cell::Cell;
 
 #[wasm_bindgen]
@@ -94,8 +96,25 @@ impl Universe {
         self.cells = next;
     }
 
-    pub fn render(&self) -> String {
-        self.to_string()
+    pub fn render(&self, ctx: &CanvasRenderingContext2d, alive: &JsValue, dead: &JsValue) {
+        ctx.begin_path();
+
+        ctx.set_fill_style(dead);
+        ctx.fill_rect(0.0, 0.0, (self.size[0] * 5) as f64, (self.size[1] * 5) as f64);
+
+        ctx.set_fill_style(alive);
+
+        for row in 0..self.size[1] {
+            for col in 0..self.size[0] {
+                let idx = self.get_index(row, col);
+
+                if self.cells[idx] == Cell::Alive {
+                    ctx.fill_rect((col * 5) as f64, (row * 5) as f64, 5.0, 5.0);
+                }
+            }
+        }
+
+        ctx.stroke();
     }
 
     pub fn size(&self) -> Vector2D {
@@ -104,20 +123,5 @@ impl Universe {
 
     pub fn cells(&self) -> *const Cell {
         self.cells.as_ptr()
-    }
-}
-
-impl fmt::Display for Universe {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        for line in self.cells.as_slice().chunks(self.size[0]) {
-            for &cell in line {
-                let symbol = if cell == Cell::Dead { '◻' } else { '◼' };
-                write!(f, "{}", symbol)?;
-            }
-
-            writeln!(f)?;
-        }
-
-        Ok(())
     }
 }
