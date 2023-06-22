@@ -1,101 +1,108 @@
 use wasm_bindgen::prelude::wasm_bindgen;
-use js_sys::{JsString, Math};
-use std::fmt;
-use std::fmt::Formatter;
-use na::{vector, Vector2};
+use js_sys::Math;
+use na::{point, Point2, vector, Vector2};
 use py::wasm::Vector2D;
 use wasm_bindgen::JsValue;
 use web_sys::CanvasRenderingContext2d;
-use crate::cell::Cell;
+use crate::utils::{cmp_zorder, DIRECTIONS};
 
+/// Life universe
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
     size: Vector2<usize>,
-    cells: Vec<Cell>,
+    cells: Vec<Point2<i32>>,
 }
 
 impl Universe {
-    fn get_index(&self, row: usize, column: usize) -> usize {
-        row * self.size[0] + column
+    /// Returns index of point in cells vector (where it is, or where it should be)
+    fn index_of(&self, point: &Point2<i32>) -> Result<usize, usize> {
+        self.cells.binary_search_by(|pt| cmp_zorder(pt, point))
     }
 
-    fn live_neighbor_count(&self, row: usize, column: usize) -> u8 {
-        let mut count = 0;
+    /// Check if cell at given point is alive
+    fn is_alive(&self, point: &Point2<i32>) -> bool {
+        self.index_of(point).is_ok()
+    }
 
-        for delta_row in [self.size[1] - 1, 0, 1].iter().cloned() {
-            for delta_col in [self.size[0] - 1, 0, 1].iter().cloned() {
-                if delta_row == 0 && delta_col == 0 {
-                    continue;
-                }
-
-                let neighbor_row = (row + delta_row) % self.size[1];
-                let neighbor_col = (column + delta_col) % self.size[1];
-                let idx = self.get_index(neighbor_row, neighbor_col);
-                count += self.cells[idx] as u8;
-            }
+    /// Set cell at given point alive
+    fn set_alive(&mut self, point: &Point2<i32>) {
+        if let Err(idx) = self.index_of(point) {
+            self.cells.insert(idx, *point);
         }
+    }
 
-        count
+    /// Set cell at given point dead
+    fn set_dead(&mut self, point: &Point2<i32>) {
+        if let Ok(idx) = self.index_of(point) {
+            self.cells.remove(idx);
+        }
+    }
+
+    /// Count alive neighbors of given point
+    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
+        DIRECTIONS
+            .iter()
+            .filter(move |&d| {
+                let mut neighbor = point + d;
+                neighbor[0] %= self.size[0] as i32;
+                neighbor[1] %= self.size[1] as i32;
+
+                self.is_alive(&neighbor)
+            })
+            .count()
     }
 }
 
-// Public methods
 #[wasm_bindgen]
 impl Universe {
+    /// Builds a dead universe
     pub fn dead(width: usize, height: usize) -> Universe {
-        let cells = (0..width * height)
-            .map(|_i| Cell::Dead)
-            .collect();
-
         Universe {
             size: vector![width, height],
-            cells,
+            cells: Vec::new(),
         }
     }
 
+    /// Builds a random universe
     pub fn random(width: usize, height: usize) -> Universe {
-        let cells = (0..width * height)
-            .map(|_i| {
+        let mut universe = Universe::dead(width, height);
+
+        for row in 0..universe.size[1] as i32 {
+            for col in 0..universe.size[0] as i32 {
                 let rand = Math::random();
 
                 if rand < 0.5 {
-                    Cell::Alive
-                } else {
-                    Cell::Dead
+                    universe.set_alive(&point![col, row])
                 }
-            })
-            .collect();
-
-        Universe {
-            size: vector![width, height],
-            cells
-        }
-    }
-
-    pub fn tick(&mut self) {
-        let mut next = self.cells.clone();
-
-        for row in 0..self.size[1] {
-            for col in 0..self.size[0] {
-                let idx = self.get_index(row, col);
-                let cell = self.cells[idx];
-                let live_neighbors = self.live_neighbor_count(row, col);
-
-                let next_cell = match (cell, live_neighbors) {
-                    (Cell::Alive, x) if x < 2 => Cell::Dead,
-                    (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                    (Cell::Alive, x) if x > 3 => Cell::Dead,
-                    (Cell::Dead, 3) => Cell::Alive,
-                    (otherwise, _) => otherwise
-                };
-
-                next[idx] = next_cell;
             }
         }
 
-        self.cells = next;
+        universe
     }
 
+    /// Compute next state
+    pub fn tick(&mut self) {
+        let old = self.clone();
+
+        for row in 0..self.size[1] as i32 {
+            for col in 0..self.size[0] as i32 {
+                let point = point![col, row];
+
+                let cell = old.is_alive(&point);
+                let live_neighbors = old.alive_neighbor_count(&point);
+
+                match (cell, live_neighbors) {
+                    (true, x) if x < 2 => self.set_dead(&point),
+                    (true, x) if x > 3 => self.set_dead(&point),
+                    (false, 3) => self.set_alive(&point),
+                    _ => ()
+                };
+            }
+        }
+    }
+
+    /// Render universe inside canvas
     pub fn render(&self, ctx: &CanvasRenderingContext2d, alive: &JsValue, dead: &JsValue) {
         ctx.begin_path();
 
@@ -104,14 +111,8 @@ impl Universe {
 
         ctx.set_fill_style(alive);
 
-        for row in 0..self.size[1] {
-            for col in 0..self.size[0] {
-                let idx = self.get_index(row, col);
-
-                if self.cells[idx] == Cell::Alive {
-                    ctx.fill_rect((col * 5) as f64, (row * 5) as f64, 5.0, 5.0);
-                }
-            }
+        for cell in self.cells.iter() {
+            ctx.fill_rect((cell[0] * 5) as f64, (cell[1] * 5) as f64, 5.0, 5.0);
         }
 
         ctx.stroke();
@@ -119,9 +120,5 @@ impl Universe {
 
     pub fn size(&self) -> Vector2D {
         Vector2D::from(self.size.cast())
-    }
-
-    pub fn cells(&self) -> *const Cell {
-        self.cells.as_ptr()
     }
 }
