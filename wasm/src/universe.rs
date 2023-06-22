@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 use crate::universe_style::UniverseStyle;
 
-use crate::utils::{cmp_zorder, DIRECTIONS};
+use crate::utils::{cmp_xy_order, cmp_zorder, DIRECTIONS};
 
 /// Life universe
 #[derive(Clone)]
@@ -107,7 +107,7 @@ impl Universe {
 impl Universe {
     /// Returns index of point in cells vector (where it is, or where it should be)
     fn index_of(&self, point: &Point2<i32>) -> Result<usize, usize> {
-        self.cells.binary_search_by(|pt| cmp_zorder(pt, point))
+        self.cells.binary_search_by(|pt| cmp_xy_order(pt, point))
     }
 
     /// Check if cell at given point is alive
