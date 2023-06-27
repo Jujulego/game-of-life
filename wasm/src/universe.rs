@@ -3,15 +3,15 @@ use na::{point, Point2, vector, Vector2};
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
+use crate::quadtree::Quadtree;
 use crate::universe_style::UniverseStyle;
-
-use crate::utils::{cmp_xy_order, cmp_zorder, DIRECTIONS};
+use crate::utils::DIRECTIONS;
 
 /// Life universe
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    cells: Vec<Point2<i32>>,
+    cells: Quadtree,
     size: Vector2<usize>,
     style: UniverseStyle,
 }
@@ -21,7 +21,7 @@ impl Universe {
     /// Builds a dead universe
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
-            cells: Vec::new(),
+            cells: Quadtree::new(),
             size: vector![width, height],
             style: UniverseStyle::default(),
         }
@@ -105,28 +105,19 @@ impl Universe {
 }
 
 impl Universe {
-    /// Returns index of point in cells vector (where it is, or where it should be)
-    fn index_of(&self, point: &Point2<i32>) -> Result<usize, usize> {
-        self.cells.binary_search_by(|pt| cmp_xy_order(pt, point))
-    }
-
     /// Check if cell at given point is alive
     fn is_alive(&self, point: &Point2<i32>) -> bool {
-        self.index_of(point).is_ok()
+        self.cells.has(point)
     }
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: &Point2<i32>) {
-        if let Err(idx) = self.index_of(point) {
-            self.cells.insert(idx, *point);
-        }
+        self.cells.insert(point);
     }
 
     /// Set cell at given point dead
     fn set_dead(&mut self, point: &Point2<i32>) {
-        if let Ok(idx) = self.index_of(point) {
-            self.cells.remove(idx);
-        }
+        self.cells.remove(point);
     }
 
     /// Count alive neighbors of given point
