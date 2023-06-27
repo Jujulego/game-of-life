@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 
 // Constants
 const CELL_SIZE = 5;
-const FRAME_RATE = 100;
+const FRAME_RATE = 1000;
 
 // Component
 export default function Universe() {
@@ -32,6 +32,7 @@ export default function Universe() {
 
     // Animate !
     const ctx = canvas.current.getContext('2d')!;
+    universe.render(ctx);
 
     let frame: number;
     let last = 0;
@@ -41,7 +42,7 @@ export default function Universe() {
         last = time;
 
         // Update state
-        universe.tick();
+        //universe.tick();
         universe.render(ctx);
       }
 
@@ -54,5 +55,5 @@ export default function Universe() {
   }, [universe]);
 
   // Render
-  return <canvas ref={canvas} />
+  return <canvas ref={canvas} onClick={() => universe.tick()} />
 }
