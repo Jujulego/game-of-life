@@ -39,7 +39,6 @@ impl Quadtree {
         let mut slice = &self.elements[..];
 
         loop {
-            dbg!(point);
             // Search point
             let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
 
@@ -98,23 +97,23 @@ mod tests {
     #[test]
     fn test_quadtree_search() {
         let mut quadtree = Quadtree::new();
-        let area = (point![1, 1]..=point![2, 2]).bbox();
+        let area = (point![5, 5]..=point![10, 10]).bbox();
 
-        quadtree.insert(&point![0, 1]);
-        quadtree.insert(&point![1, 1]);
-        quadtree.insert(&point![1, 2]);
-        quadtree.insert(&point![1, 3]);
-        quadtree.insert(&point![2, 1]);
-        quadtree.insert(&point![2, 2]);
-        quadtree.insert(&point![3, 2]);
+        quadtree.insert(&point![0, 5]);
+        quadtree.insert(&point![5, 5]);
+        quadtree.insert(&point![5, 10]);
+        quadtree.insert(&point![5, 15]);
+        quadtree.insert(&point![10, 5]);
+        quadtree.insert(&point![10, 10]);
+        quadtree.insert(&point![15, 10]);
 
         assert_eq!(
             quadtree.search(&area),
             vec![
-                point![1, 1],
-                point![1, 2],
-                point![2, 1],
-                point![2, 2],
+                point![5, 5],
+                point![5, 10],
+                point![10, 5],
+                point![10, 10],
             ]
         );
     }

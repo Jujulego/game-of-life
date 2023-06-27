@@ -31,7 +31,7 @@ impl<'a> XYGenerator<'a> {
             None
         } else if pt.x < first.x {
             Some(first)
-        } else if pt.x > last.y {
+        } else if pt.x > last.x {
             None
         } else if pt.y < first.y {
             Some(point![pt.x, first.y])

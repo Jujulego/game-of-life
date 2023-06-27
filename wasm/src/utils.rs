@@ -1,7 +1,5 @@
 use std::cmp;
-use std::ops::Bound;
-use na::{point, Point2, vector, Vector2};
-use py::BBox;
+use na::{Point2, vector, Vector2};
 
 pub const DIRECTIONS: [Vector2<i32>; 8] = [
     vector![-1, -1],

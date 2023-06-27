@@ -6,7 +6,6 @@ use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 use crate::quadtree::Quadtree;
 use crate::universe_style::UniverseStyle;
-use crate::utils::DIRECTIONS;
 
 /// Life universe
 #[derive(Clone)]
