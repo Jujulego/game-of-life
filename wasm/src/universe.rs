@@ -31,9 +31,9 @@ impl Universe {
     pub fn fixed(width: usize, height: usize) -> Universe {
         let mut universe = Universe::dead(width, height);
 
-        for row in 0..universe.size[1] as i32 {
-            for col in 0..universe.size[0] as i32 {
-                let i = row * (universe.size[0] as i32) + col;
+        for row in 0..universe.size.y as i32 {
+            for col in 0..universe.size.x as i32 {
+                let i = row * (universe.size.x as i32) + col;
 
                 if i % 2 == 0 || i % 7 == 0 || i % 13 == 0 {
                     universe.set_alive(&point![col, row])
@@ -48,8 +48,8 @@ impl Universe {
     pub fn random(width: usize, height: usize) -> Universe {
         let mut universe = Universe::dead(width, height);
 
-        for row in 0..universe.size[1] as i32 {
-            for col in 0..universe.size[0] as i32 {
+        for row in 0..universe.size.y as i32 {
+            for col in 0..universe.size.x as i32 {
                 let rand = Math::random();
 
                 if rand < 0.5 {
@@ -65,19 +65,20 @@ impl Universe {
     pub fn tick(&mut self) {
         let old = self.clone();
 
-        for row in 0..self.size[1] as i32 {
-            for col in 0..self.size[0] as i32 {
+        for row in 0..self.size.y as i32 {
+            for col in 0..self.size.x as i32 {
                 let point = point![col, row];
 
                 let cell = old.is_alive(&point);
                 let live_neighbors = old.alive_neighbor_count(&point);
 
-                match (cell, live_neighbors) {
-                    (true, x) if x < 2 => self.set_dead(&point),
-                    (true, x) if x > 3 => self.set_dead(&point),
-                    (false, 3) => self.set_alive(&point),
-                    _ => ()
-                };
+                if cell {
+                    if !(2..=3).contains(&live_neighbors) {
+                        self.set_dead(&point)
+                    }
+                } else if live_neighbors == 3 {
+                    self.set_alive(&point)
+                }
             }
         }
     }
@@ -89,7 +90,7 @@ impl Universe {
         ctx.begin_path();
 
         ctx.set_fill_style(self.style.dead_color());
-        ctx.fill_rect(0.0, 0.0, size[0], size[1]);
+        ctx.fill_rect(0.0, 0.0, size.x, size.y);
 
         ctx.set_fill_style(self.style.alive_color());
 
@@ -140,7 +141,7 @@ impl Universe {
     /// Count alive neighbors of given point
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
         let area = (point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]).bbox();
-
+;
         self.cells.search(area)
             .iter()
             .filter(|&pt| pt != point)
