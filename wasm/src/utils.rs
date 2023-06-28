@@ -1,17 +1,6 @@
 use std::cmp;
-use na::{Point2, vector, Vector2};
+use na::Point2;
 use wasm_bindgen::prelude::wasm_bindgen;
-
-pub const DIRECTIONS: [Vector2<i32>; 8] = [
-    vector![-1, -1],
-    vector![-1,  0],
-    vector![-1,  1],
-    vector![ 0,  1],
-    vector![ 1,  1],
-    vector![ 1,  0],
-    vector![ 1, -1],
-    vector![ 0, -1],
-];
 
 /// Compare point in Z-order
 /// => https://en.wikipedia.org/wiki/Z-order_curve

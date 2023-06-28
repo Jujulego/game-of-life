@@ -1,4 +1,3 @@
-use std::ops::Bound::{self, *};
 use std::slice::Iter;
 use na::Point2;
 use py::BBox;
@@ -34,14 +33,18 @@ impl BinaryTree {
 
     /// Returns all elements inside the given area
     pub fn search(&self, area: BBox<i32, 2>) -> Vec<Point2<i32>> {
-        let generator = XYGenerator::within(area);
-
         let mut result = Vec::new();
+
+        if self.elements.is_empty() {
+            return result;
+        }
+
+        let generator = XYGenerator::within(area);
         let mut point = generator.first();
         let mut slice = self.elements.as_slice();
 
-        while !slice.is_empty() {
-            if slice[0] == point {
+        loop {
+            if unsafe { slice.get_unchecked(0) } == &point {
                 result.push(point);
                 slice = &slice[1..];
             } else {
@@ -49,19 +52,20 @@ impl BinaryTree {
                 let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
 
                 // Handle result
-                match res {
-                    Ok(idx) => {
-                        result.push(point);
-                        slice = &slice[idx + 1..];
-                    },
-                    Err(idx) => {
-                        if idx >= slice.len() {
-                            break;
-                        }
-
-                        slice = &slice[idx..];
-                    }
+                if let Ok(idx) = res {
+                    result.push(point);
+                    slice = unsafe { slice.get_unchecked(idx + 1..) };
+                } else {
+                    slice = unsafe {
+                        let idx = res.unwrap_err_unchecked();
+                        slice.get_unchecked(idx..)
+                    };
                 }
+            }
+
+            // Reach end of elements
+            if slice.is_empty() {
+                break;
             }
 
             // Compute next point

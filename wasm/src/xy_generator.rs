@@ -27,12 +27,10 @@ impl XYGenerator {
         let first = self.first();
         let last = self.last();
 
-        if pt == &last {
+        if pt == &last || pt.x > last.x {
             None
         } else if pt.x < first.x {
             Some(first)
-        } else if pt.x > last.x {
-            None
         } else if pt.y < first.y {
             Some(point![pt.x, first.y])
         } else if pt.y >= last.y {
