@@ -27,6 +27,23 @@ impl Universe {
         }
     }
 
+    /// Builds a fixed universe
+    pub fn fixed(width: usize, height: usize) -> Universe {
+        let mut universe = Universe::dead(width, height);
+
+        for row in 0..universe.size[1] as i32 {
+            for col in 0..universe.size[0] as i32 {
+                let i = row * (universe.size[0] as i32) + col;
+
+                if i % 2 == 0 || i % 7 == 0 || i % 13 == 0 {
+                    universe.set_alive(&point![col, row])
+                }
+            }
+        }
+
+        universe
+    }
+
     /// Builds a random universe
     pub fn random(width: usize, height: usize) -> Universe {
         let mut universe = Universe::dead(width, height);
@@ -124,7 +141,7 @@ impl Universe {
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
         let area = (point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]).bbox();
 
-        self.cells.search(&area)
+        self.cells.search(area)
             .iter()
             .filter(|&pt| pt != point)
             .count()

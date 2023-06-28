@@ -31,16 +31,37 @@ impl Quadtree {
             .is_ok()
     }
 
-    pub fn search(&self, area: &BBox<i32, 2>) -> Vec<Point2<i32>> {
+    /// Returns all elements inside the given area
+    pub fn search(&self, area: BBox<i32, 2>) -> Vec<Point2<i32>> {
         let generator = XYGenerator::within(area);
 
         let mut result = Vec::new();
         let mut point = generator.first();
         let mut slice = &self.elements[..];
 
-        loop {
+        while !slice.is_empty() {
             // Search point
+            #[cfg(any(feature = "binary-search", feature = "binary-search-quick-pick"))]
             let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
+
+            #[cfg(feature = "binary-search-first-is-next")]
+            let res = {
+                if slice[0] == point {
+                    Ok(0)
+                } else {
+                    slice.binary_search_by(|pt| cmp_xy_order(pt, &point))
+                }
+            };
+
+            #[cfg(feature = "binary-search-first-in-bbox")]
+            let res = {
+                if area.contains(&slice[0]) {
+                    point = slice[0];
+                    Ok(0)
+                } else {
+                    slice.binary_search_by(|pt| cmp_xy_order(pt, &point))
+                }
+            };
 
             // Handle result
             match res {
@@ -55,6 +76,15 @@ impl Quadtree {
 
                     slice = &slice[idx..];
                 }
+            }
+
+            // Quick pick firsts
+            #[cfg(feature = "binary-search-quick-pick")]
+            while !slice.is_empty() && area.contains(&slice[0]) {
+                point = slice[0];
+                slice = &slice[1..];
+
+                result.push(point);
             }
 
             // Compute next point
@@ -108,7 +138,7 @@ mod tests {
         quadtree.insert(&point![15, 10]);
 
         assert_eq!(
-            quadtree.search(&area),
+            quadtree.search(area),
             vec![
                 point![5, 5],
                 point![5, 10],

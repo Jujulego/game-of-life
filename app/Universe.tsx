@@ -12,7 +12,7 @@ export default function Universe() {
   const { Universe, UniverseStyle } = useWasmModule();
 
   // State
-  const [universe] = useState(() => Universe.random(256, 128));
+  const [universe] = useState(() => Universe.fixed(256, 128));
 
   // Refs
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -40,9 +40,14 @@ export default function Universe() {
       if (time - last > FRAME_RATE) {
         last = time;
 
+        performance.mark('loop-start');
+
         // Update state
         universe.tick();
         universe.render(ctx);
+
+        performance.mark('loop-end');
+        performance.measure('loop', 'loop-start', 'loop-end');
       }
 
       frame = requestAnimationFrame(loop);

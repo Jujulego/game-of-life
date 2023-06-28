@@ -3,13 +3,13 @@ use na::{point, Point2};
 use py::BBox;
 
 /// Generates all points within a bbox
-pub struct XYGenerator<'a> {
-    area: &'a BBox<i32, 2>
+pub struct XYGenerator {
+    area: BBox<i32, 2>
 }
 
 // Methods
-impl<'a> XYGenerator<'a> {
-    pub fn within(area: &'a BBox<i32, 2>) -> XYGenerator {
+impl XYGenerator {
+    pub fn within(area: BBox<i32, 2>) -> XYGenerator {
         XYGenerator {
             area
         }
@@ -68,7 +68,7 @@ mod tests {
     #[test]
     fn test_full_generation() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![0, 0]), Some(point![0, 1]));
         assert_eq!(generator.next(&point![0, 1]), Some(point![0, 2]));
@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn test_below_left_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![-2, -2]), Some(point![0, 0]));
     }
@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn test_left_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![-2, 2]), Some(point![0, 0]));
     }
@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn test_over_left_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![-2, 7]), Some(point![0, 0]));
     }
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_below_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![2, -2]), Some(point![2, 0]));
     }
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_over_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![2, 7]), Some(point![3, 0]));
     }
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn test_last_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![5, 5]), None);
     }
@@ -158,7 +158,7 @@ mod tests {
     #[test]
     fn test_below_right_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![7, -2]), None);
     }
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     fn test_right_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![7, 2]), None);
     }
@@ -174,7 +174,7 @@ mod tests {
     #[test]
     fn test_over_right_point() {
         let area = (point![0, 0]..=point![5, 5]).bbox();
-        let generator = XYGenerator::within(&area);
+        let generator = XYGenerator::within(area);
 
         assert_eq!(generator.next(&point![7, 7]), None);
     }
