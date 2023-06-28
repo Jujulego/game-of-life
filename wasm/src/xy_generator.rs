@@ -43,18 +43,22 @@ impl XYGenerator {
 
 // Utils
 fn first_in(bounds: &(Bound<i32>, Bound<i32>)) -> i32 {
-    match bounds.0 {
-        Unbounded => i32::MIN,
-        Included(l) => l,
-        Excluded(l) => l + 1,
+    if let Included(l) = bounds.0 {
+        l
+    } else if let Excluded(l) = bounds.0 {
+        l + 1
+    } else {
+        i32::MIN
     }
 }
 
 fn last_in(bounds: &(Bound<i32>, Bound<i32>)) -> i32 {
-    match bounds.1 {
-        Unbounded => i32::MAX,
-        Included(l) => l,
-        Excluded(l) => l - 1,
+    if let Included(l) = bounds.1 {
+        l
+    } else if let Excluded(l) = bounds.1 {
+        l - 1
+    } else {
+        i32::MIN
     }
 }
 
