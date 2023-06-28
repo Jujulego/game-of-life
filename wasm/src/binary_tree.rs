@@ -1,3 +1,4 @@
+use std::ops::Bound::{self, *};
 use std::slice::Iter;
 use na::Point2;
 use py::BBox;
@@ -6,15 +7,15 @@ use crate::xy_generator::XYGenerator;
 
 /// Quadtree
 #[derive(Clone)]
-pub struct Quadtree {
+pub struct BinaryTree {
     elements: Vec<Point2<i32>>,
 }
 
 // Methods
-impl Quadtree {
+impl BinaryTree {
     /// Creates an empty quadtree
-    pub fn new() -> Quadtree {
-        Quadtree {
+    pub fn new() -> BinaryTree {
+        BinaryTree {
             elements: Vec::new(),
         }
     }
@@ -37,60 +38,37 @@ impl Quadtree {
 
         let mut result = Vec::new();
         let mut point = generator.first();
-        let mut slice = &self.elements[..];
+        let mut slice = self.elements.as_slice();
 
         while !slice.is_empty() {
-            // Search point
-            #[cfg(any(feature = "binary-search", feature = "binary-search-quick-pick"))]
-            let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
-
-            #[cfg(feature = "binary-search-first-is-next")]
-            let res = {
-                if slice[0] == point {
-                    Ok(0)
-                } else {
-                    slice.binary_search_by(|pt| cmp_xy_order(pt, &point))
-                }
-            };
-
-            #[cfg(feature = "binary-search-first-in-bbox")]
-            let res = {
-                if area.contains(&slice[0]) {
-                    point = slice[0];
-                    Ok(0)
-                } else {
-                    slice.binary_search_by(|pt| cmp_xy_order(pt, &point))
-                }
-            };
-
-            // Handle result
-            match res {
-                Ok(idx) => {
-                    result.push(point);
-                    slice = &slice[idx + 1..];
-                }
-                Err(idx) => {
-                    if idx >= slice.len() {
-                        break;
-                    }
-
-                    slice = &slice[idx..];
-                }
-            }
-
-            // Quick pick firsts
-            #[cfg(feature = "binary-search-quick-pick")]
-            while !slice.is_empty() && area.contains(&slice[0]) {
-                point = slice[0];
-                slice = &slice[1..];
-
+            if slice[0] == point {
                 result.push(point);
+                slice = &slice[1..];
+            } else {
+                // Search point
+                let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
+
+                // Handle result
+                match res {
+                    Ok(idx) => {
+                        result.push(point);
+                        slice = &slice[idx + 1..];
+                    },
+                    Err(idx) => {
+                        if idx >= slice.len() {
+                            break;
+                        }
+
+                        slice = &slice[idx..];
+                    }
+                }
             }
 
             // Compute next point
-            match generator.next(&point) {
-                Some(pt) => point = pt,
-                None => break
+            if let Some(pt) = generator.next(&point) {
+                point = pt;
+            } else {
+                break;
             }
         }
 
@@ -126,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_quadtree_search() {
-        let mut quadtree = Quadtree::new();
+        let mut quadtree = BinaryTree::new();
         let area = (point![5, 5]..=point![10, 10]).bbox();
 
         quadtree.insert(&point![0, 5]);

@@ -4,14 +4,14 @@ use py::traits::BBoxBounded;
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
-use crate::quadtree::Quadtree;
+use crate::binary_tree::BinaryTree;
 use crate::universe_style::UniverseStyle;
 
 /// Life universe
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    cells: Quadtree,
+    cells: BinaryTree,
     size: Vector2<usize>,
     style: UniverseStyle,
 }
@@ -21,7 +21,7 @@ impl Universe {
     /// Builds a dead universe
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
-            cells: Quadtree::new(),
+            cells: BinaryTree::new(),
             size: vector![width, height],
             style: UniverseStyle::default(),
         }
