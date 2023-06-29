@@ -36,7 +36,7 @@ impl Universe {
                 let i = row * (universe.size.x as i32) + col;
 
                 if i % 2 == 0 || i % 7 == 0 || i % 13 == 0 {
-                    universe.set_alive(&point![col, row])
+                    universe.set_alive(point![col, row])
                 }
             }
         }
@@ -53,7 +53,7 @@ impl Universe {
                 let rand = Math::random();
 
                 if rand < 0.5 {
-                    universe.set_alive(&point![col, row])
+                    universe.set_alive(point![col, row])
                 }
             }
         }
@@ -74,10 +74,10 @@ impl Universe {
 
                 if cell {
                     if !(2..=3).contains(&live_neighbors) {
-                        self.set_dead(&point)
+                        self.set_dead(point)
                     }
                 } else if live_neighbors == 3 {
-                    self.set_alive(&point)
+                    self.set_alive(point)
                 }
             }
         }
@@ -129,19 +129,19 @@ impl Universe {
     }
 
     /// Set cell at given point alive
-    fn set_alive(&mut self, point: &Point2<i32>) {
+    fn set_alive(&mut self, point: Point2<i32>) {
         self.cells.insert(point);
     }
 
     /// Set cell at given point dead
-    fn set_dead(&mut self, point: &Point2<i32>) {
-        self.cells.remove(point);
+    fn set_dead(&mut self, point: Point2<i32>) {
+        self.cells.remove(&point);
     }
 
     /// Count alive neighbors of given point
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
         let area = (point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]).bbox();
-;
+
         self.cells.search(area)
             .iter()
             .filter(|&pt| pt != point)

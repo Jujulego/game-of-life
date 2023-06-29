@@ -44,8 +44,12 @@ impl BinaryTree {
         let mut slice = self.elements.as_slice();
 
         loop {
-            if unsafe { slice.get_unchecked(0) } == &point {
-                result.push(point);
+            let first = unsafe { slice.get_unchecked(0) };
+
+            if area.contains(first) {
+                result.push(*first);
+                point = *first;
+
                 slice = &slice[1..];
             } else {
                 // Search point
@@ -80,12 +84,12 @@ impl BinaryTree {
     }
 
     /// Insert point inside tree (if missing)
-    pub fn insert(&mut self, point: &Point2<i32>) {
+    pub fn insert(&mut self, point: Point2<i32>) {
         let res = self.elements
-            .binary_search_by(|pt| cmp_xy_order(pt, point));
+            .binary_search_by(|pt| cmp_xy_order(pt, &point));
 
         if let Err(idx) = res {
-            self.elements.insert(idx, *point);
+            self.elements.insert(idx, point);
         }
     }
 
@@ -111,13 +115,13 @@ mod tests {
         let mut quadtree = BinaryTree::new();
         let area = (point![5, 5]..=point![10, 10]).bbox();
 
-        quadtree.insert(&point![0, 5]);
-        quadtree.insert(&point![5, 5]);
-        quadtree.insert(&point![5, 10]);
-        quadtree.insert(&point![5, 15]);
-        quadtree.insert(&point![10, 5]);
-        quadtree.insert(&point![10, 10]);
-        quadtree.insert(&point![15, 10]);
+        quadtree.insert(point![0, 5]);
+        quadtree.insert(point![5, 5]);
+        quadtree.insert(point![5, 10]);
+        quadtree.insert(point![5, 15]);
+        quadtree.insert(point![10, 5]);
+        quadtree.insert(point![10, 10]);
+        quadtree.insert(point![15, 10]);
 
         assert_eq!(
             quadtree.search(area),

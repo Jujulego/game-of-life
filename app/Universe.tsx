@@ -40,14 +40,15 @@ export default function Universe() {
       if (time - last > FRAME_RATE) {
         last = time;
 
+        // Update state
         performance.mark('loop-start');
 
-        // Update state
         universe.tick();
-        universe.render(ctx);
 
         performance.mark('loop-end');
         performance.measure('loop', 'loop-start', 'loop-end');
+
+        universe.render(ctx);
       }
 
       frame = requestAnimationFrame(loop);
