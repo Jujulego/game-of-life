@@ -142,8 +142,11 @@ impl Universe {
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
         let area = (point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]).bbox();
 
-        self.cells.search(area)
-            .iter()
+        // self.cells.search(area)
+        //     .iter()
+        //     .filter(|&pt| pt != point)
+        //     .count()
+        self.cells.query(area)
             .filter(|&pt| pt != point)
             .count()
     }

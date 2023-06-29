@@ -1,6 +1,7 @@
 use std::slice::Iter;
 use na::Point2;
 use py::BBox;
+use crate::binary_query::BinaryQuery;
 use crate::utils::cmp_xy_order;
 use crate::xy_generator::XYGenerator;
 
@@ -83,6 +84,10 @@ impl BinaryTree {
         result
     }
 
+    pub fn query(&self, area: BBox<i32, 2>) -> BinaryQuery<'_> {
+        BinaryQuery::new(area, self.elements.as_slice())
+    }
+
     /// Insert point inside tree (if missing)
     pub fn insert(&mut self, point: Point2<i32>) {
         let res = self.elements
@@ -125,6 +130,30 @@ mod tests {
 
         assert_eq!(
             quadtree.search(area),
+            vec![
+                point![5, 5],
+                point![5, 10],
+                point![10, 5],
+                point![10, 10],
+            ]
+        );
+    }
+
+    #[test]
+    fn test_quadtree_query() {
+        let mut quadtree = BinaryTree::new();
+        let area = (point![5, 5]..=point![10, 10]).bbox();
+
+        quadtree.insert(point![0, 5]);
+        quadtree.insert(point![5, 5]);
+        quadtree.insert(point![5, 10]);
+        quadtree.insert(point![5, 15]);
+        quadtree.insert(point![10, 5]);
+        quadtree.insert(point![10, 10]);
+        quadtree.insert(point![15, 10]);
+
+        assert_eq!(
+            quadtree.query(area).copied().collect::<Vec<Point2<i32>>>(),
             vec![
                 point![5, 5],
                 point![5, 10],
