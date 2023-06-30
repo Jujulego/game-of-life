@@ -1,5 +1,7 @@
+use std::cmp::{max, min};
 use na::{point, Point2, vector};
 use py::BBox;
+use py::traits::BBoxBounded;
 
 /// Build bbox around a single point
 pub fn bbox_around(pt: &Point2<i32>) -> BBox<i32, 2> {
@@ -17,6 +19,33 @@ pub fn parent_bbox(child: &BBox<i32, 2>) -> BBox<i32, 2> {
     BBox::from_anchor_size(&start, &size)
 }
 
+/// Compute smallest common bbox
+pub fn common_bbox(a: &Point2<i32>, b: &Point2<i32>) -> BBox<i32, 2> {
+    if a.x.signum() != b.x.signum() || a.y.signum() != b.y.signum() {
+        return (..).bbox();
+    }
+
+    let mut a = bbox_around(a);
+    let mut b = bbox_around(b);
+
+    while a != b {
+        a = parent_bbox(&a);
+        b = parent_bbox(&b);
+    }
+
+    a
+}
+
+fn next_power_of_2(mut v: i32) -> i32 {
+    v = v.abs() - 1;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v + 1
+}
+
 #[cfg(test)]
 mod tests {
     use py::traits::BBoxBounded;
@@ -27,7 +56,7 @@ mod tests {
         assert_eq!(bbox_around(&point![5, 5]), (point![5, 5]..point![6, 6]).bbox());
     }
 
-    mod test_parent_bbox {
+    mod parent_bbox {
         use super::*;
 
         #[test]
@@ -108,6 +137,64 @@ mod tests {
                 parent_bbox(&(point![-8, -8]..point![-6, -6]).bbox()),
                 (point![-8, -8]..point![-4, -4]).bbox()
             );
+        }
+    }
+
+    mod common_bbox {
+        use super::*;
+
+        #[test]
+        fn test_on_positive() {
+            assert_eq!(
+                common_bbox(&point![3, 3], &point![5, 5]),
+                (point![0, 0]..point![8, 8]).bbox()
+            );
+            assert_eq!(
+                common_bbox(&point![3, 5], &point![5, 3]),
+                (point![0, 0]..point![8, 8]).bbox()
+            );
+        }
+
+        #[test]
+        fn test_on_negative() {
+            assert_eq!(
+                common_bbox(&point![-3, -3], &point![-5, -5]),
+                (point![-8, -8]..point![0, 0]).bbox()
+            );
+            assert_eq!(
+                common_bbox(&point![-3, -5], &point![-5, -3]),
+                (point![-8, -8]..point![0, 0]).bbox()
+            );
+        }
+
+        #[test]
+        fn test_different_signs() {
+            assert_eq!(
+                common_bbox(&point![-3, 3], &point![-5, -5]),
+                (..).bbox()
+            );
+            assert_eq!(
+                common_bbox(&point![3, -3], &point![-5, -5]),
+                (..).bbox()
+            );
+        }
+    }
+
+    mod next_power_of_2 {
+        use super::*;
+
+        #[test]
+        fn test_on_positive() {
+            assert_eq!(next_power_of_2(3), 4);
+            assert_eq!(next_power_of_2(5), 8);
+            assert_eq!(next_power_of_2(12), 16);
+        }
+
+        #[test]
+        fn test_on_negative() {
+            assert_eq!(next_power_of_2(-3), 4);
+            assert_eq!(next_power_of_2(-5), 8);
+            assert_eq!(next_power_of_2(-12), 16);
         }
     }
 }
