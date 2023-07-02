@@ -1,6 +1,6 @@
 use std::iter::FusedIterator;
 use na::Point2;
-use py::BBox;
+use py::{BBox, Holds};
 use crate::utils::cmp_xy_order;
 use crate::xy_generator::XYGenerator;
 
@@ -40,7 +40,7 @@ impl<'a> Iterator for BinaryQuery<'a> {
             if let Some(next) = self.next {
                 let first = unsafe { self.slice.get_unchecked(0) };
 
-                if self.area.contains(first) {
+                if self.area.holds(first) {
                     self.slice = unsafe { self.slice.get_unchecked(1..) };
                     self.update_next(first);
 

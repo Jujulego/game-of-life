@@ -3,7 +3,7 @@ extern crate pythagore as py;
 
 mod binary_query;
 mod binary_tree;
-mod quadtree;
+// mod quadtree;
 mod universe;
 mod universe_style;
 mod utils;

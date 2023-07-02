@@ -1,6 +1,6 @@
 use std::slice::Iter;
 use na::Point2;
-use py::BBox;
+use py::{BBox, Holds};
 use crate::binary_query::BinaryQuery;
 use crate::utils::cmp_xy_order;
 use crate::xy_generator::XYGenerator;
@@ -47,7 +47,7 @@ impl BinaryTree {
         loop {
             let first = unsafe { slice.get_unchecked(0) };
 
-            if area.contains(first) {
+            if area.holds(first) {
                 result.push(*first);
                 point = *first;
 
@@ -112,13 +112,12 @@ impl BinaryTree {
 #[cfg(test)]
 mod tests {
     use na::point;
-    use py::traits::BBoxBounded;
     use super::*;
 
     #[test]
     fn test_quadtree_search() {
         let mut quadtree = BinaryTree::new();
-        let area = (point![5, 5]..=point![10, 10]).bbox();
+        let area = BBox::from(point![5, 5]..=point![10, 10]);
 
         quadtree.insert(point![0, 5]);
         quadtree.insert(point![5, 5]);
@@ -142,7 +141,7 @@ mod tests {
     #[test]
     fn test_quadtree_query() {
         let mut quadtree = BinaryTree::new();
-        let area = (point![5, 5]..=point![10, 10]).bbox();
+        let area = BBox::from(point![5, 5]..=point![10, 10]);
 
         quadtree.insert(point![0, 5]);
         quadtree.insert(point![5, 5]);

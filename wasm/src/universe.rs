@@ -1,6 +1,6 @@
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
-use py::traits::BBoxBounded;
+use py::BBox;
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
@@ -140,7 +140,7 @@ impl Universe {
 
     /// Count alive neighbors of given point
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
-        let area = (point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]).bbox();
+        let area = BBox::from(point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1]);
 
         // self.cells.search(area)
         //     .iter()
