@@ -13,12 +13,12 @@ pub struct BinaryQuery<'a> {
 
 impl<'a> BinaryQuery<'a> {
     pub fn new(area: BBox<i32, 2>, slice: &'a [Point2<i32>]) -> BinaryQuery<'a> {
-        let generator = XYGenerator::within(area);
+        let generator = XYGenerator::within(&area);
 
         BinaryQuery {
             area,
             slice,
-            next: Some(generator.first()),
+            next: Some(*generator.first()),
             generator,
         }
     }

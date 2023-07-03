@@ -40,8 +40,8 @@ impl BinaryTree {
             return result;
         }
 
-        let generator = XYGenerator::within(area);
-        let mut point = generator.first();
+        let generator = XYGenerator::within(&area);
+        let mut point = *generator.first();
         let mut slice = self.elements.as_slice();
 
         loop {

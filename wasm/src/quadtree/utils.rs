@@ -1,7 +1,6 @@
 use std::cmp::{max, min};
 use na::{point, Point2, vector};
-use py::BBox;
-use py::traits::BBoxBounded;
+use py::{BBox, BoundPoints};
 
 /// Build bbox around a single point
 pub fn bbox_around(pt: &Point2<i32>) -> BBox<i32, 2> {
@@ -22,7 +21,7 @@ pub fn parent_bbox(child: &BBox<i32, 2>) -> BBox<i32, 2> {
 /// Compute smallest common bbox
 pub fn common_bbox(a: &Point2<i32>, b: &Point2<i32>) -> BBox<i32, 2> {
     if a.x.signum() != b.x.signum() || a.y.signum() != b.y.signum() {
-        return (..).bbox();
+        return BBox::from(..);
     }
 
     let mut a = bbox_around(a);
@@ -48,12 +47,11 @@ fn next_power_of_2(mut v: i32) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use py::traits::BBoxBounded;
     use super::*;
 
     #[test]
     fn test_bbox_around() {
-        assert_eq!(bbox_around(&point![5, 5]), (point![5, 5]..point![6, 6]).bbox());
+        assert_eq!(bbox_around(&point![5, 5]), BBox::from(point![5, 5]..point![6, 6]));
     }
 
     mod parent_bbox {
@@ -62,80 +60,80 @@ mod tests {
         #[test]
         fn test_on_unit_bbox() {
             assert_eq!(
-                parent_bbox(&(point![5, 5]..point![6, 6]).bbox()),
-                (point![4, 4]..point![6, 6]).bbox()
+                parent_bbox(&BBox::from(point![5, 5]..point![6, 6])),
+                BBox::from(point![4, 4]..point![6, 6])
             );
             assert_eq!(
-                parent_bbox(&(point![5, 7]..point![6, 8]).bbox()),
-                (point![4, 6]..point![6, 8]).bbox()
+                parent_bbox(&BBox::from(point![5, 7]..point![6, 8])),
+                BBox::from(point![4, 6]..point![6, 8])
             );
             assert_eq!(
-                parent_bbox(&(point![7, 5]..point![8, 6]).bbox()),
-                (point![6, 4]..point![8, 6]).bbox()
+                parent_bbox(&BBox::from(point![7, 5]..point![8, 6])),
+                BBox::from(point![6, 4]..point![8, 6])
             );
             assert_eq!(
-                parent_bbox(&(point![7, 7]..point![8, 8]).bbox()),
-                (point![6, 6]..point![8, 8]).bbox()
+                parent_bbox(&BBox::from(point![7, 7]..point![8, 8])),
+                BBox::from(point![6, 6]..point![8, 8])
             );
         }
 
         #[test]
         fn test_on_negative_unit_bbox() {
             assert_eq!(
-                parent_bbox(&(point![-5, -5]..point![-4, -4]).bbox()),
-                (point![-6, -6]..point![-4, -4]).bbox()
+                parent_bbox(&BBox::from(point![-5, -5]..point![-4, -4])),
+                BBox::from(point![-6, -6]..point![-4, -4])
             );
             assert_eq!(
-                parent_bbox(&(point![-5, -7]..point![-4, -6]).bbox()),
-                (point![-6, -8]..point![-4, -6]).bbox()
+                parent_bbox(&BBox::from(point![-5, -7]..point![-4, -6])),
+                BBox::from(point![-6, -8]..point![-4, -6])
             );
             assert_eq!(
-                parent_bbox(&(point![-7, -5]..point![-6, -4]).bbox()),
-                (point![-8, -6]..point![-6, -4]).bbox()
+                parent_bbox(&BBox::from(point![-7, -5]..point![-6, -4])),
+                BBox::from(point![-8, -6]..point![-6, -4])
             );
             assert_eq!(
-                parent_bbox(&(point![-7, -7]..point![-6, -6]).bbox()),
-                (point![-8, -8]..point![-6, -6]).bbox()
+                parent_bbox(&BBox::from(point![-7, -7]..point![-6, -6])),
+                BBox::from(point![-8, -8]..point![-6, -6])
             );
         }
 
         #[test]
         fn test_on_bbox() {
             assert_eq!(
-                parent_bbox(&(point![4, 4]..point![6, 6]).bbox()),
-                (point![4, 4]..point![8, 8]).bbox()
+                parent_bbox(&BBox::from(point![4, 4]..point![6, 6])),
+                BBox::from(point![4, 4]..point![8, 8])
             );
             assert_eq!(
-                parent_bbox(&(point![4, 6]..point![6, 8]).bbox()),
-                (point![4, 4]..point![8, 8]).bbox()
+                parent_bbox(&BBox::from(point![4, 6]..point![6, 8])),
+                BBox::from(point![4, 4]..point![8, 8])
             );
             assert_eq!(
-                parent_bbox(&(point![6, 4]..point![8, 6]).bbox()),
-                (point![4, 4]..point![8, 8]).bbox()
+                parent_bbox(&BBox::from(point![6, 4]..point![8, 6])),
+                BBox::from(point![4, 4]..point![8, 8])
             );
             assert_eq!(
-                parent_bbox(&(point![6, 6]..point![8, 8]).bbox()),
-                (point![4, 4]..point![8, 8]).bbox()
+                parent_bbox(&BBox::from(point![6, 6]..point![8, 8])),
+                BBox::from(point![4, 4]..point![8, 8])
             );
         }
 
         #[test]
         fn test_on_negative_bbox() {
             assert_eq!(
-                parent_bbox(&(point![-6, -6]..point![-4, -4]).bbox()),
-                (point![-8, -8]..point![-4, -4]).bbox()
+                parent_bbox(&BBox::from(point![-6, -6]..point![-4, -4])),
+                BBox::from(point![-8, -8]..point![-4, -4])
             );
             assert_eq!(
-                parent_bbox(&(point![-6, -8]..point![-4, -6]).bbox()),
-                (point![-8, -8]..point![-4, -4]).bbox()
+                parent_bbox(&BBox::from(point![-6, -8]..point![-4, -6])),
+                BBox::from(point![-8, -8]..point![-4, -4])
             );
             assert_eq!(
-                parent_bbox(&(point![-8, -6]..point![-6, -4]).bbox()),
-                (point![-8, -8]..point![-4, -4]).bbox()
+                parent_bbox(&BBox::from(point![-8, -6]..point![-6, -4])),
+                BBox::from(point![-8, -8]..point![-4, -4])
             );
             assert_eq!(
-                parent_bbox(&(point![-8, -8]..point![-6, -6]).bbox()),
-                (point![-8, -8]..point![-4, -4]).bbox()
+                parent_bbox(&BBox::from(point![-8, -8]..point![-6, -6])),
+                BBox::from(point![-8, -8]..point![-4, -4])
             );
         }
     }
@@ -147,11 +145,11 @@ mod tests {
         fn test_on_positive() {
             assert_eq!(
                 common_bbox(&point![3, 3], &point![5, 5]),
-                (point![0, 0]..point![8, 8]).bbox()
+                BBox::from(point![0, 0]..point![8, 8])
             );
             assert_eq!(
                 common_bbox(&point![3, 5], &point![5, 3]),
-                (point![0, 0]..point![8, 8]).bbox()
+                BBox::from(point![0, 0]..point![8, 8])
             );
         }
 
@@ -159,11 +157,11 @@ mod tests {
         fn test_on_negative() {
             assert_eq!(
                 common_bbox(&point![-3, -3], &point![-5, -5]),
-                (point![-8, -8]..point![0, 0]).bbox()
+                BBox::from(point![-8, -8]..point![0, 0])
             );
             assert_eq!(
                 common_bbox(&point![-3, -5], &point![-5, -3]),
-                (point![-8, -8]..point![0, 0]).bbox()
+                BBox::from(point![-8, -8]..point![0, 0])
             );
         }
 
@@ -171,11 +169,11 @@ mod tests {
         fn test_different_signs() {
             assert_eq!(
                 common_bbox(&point![-3, 3], &point![-5, -5]),
-                (..).bbox()
+                BBox::from(..)
             );
             assert_eq!(
                 common_bbox(&point![3, -3], &point![-5, -5]),
-                (..).bbox()
+                BBox::from(..)
             );
         }
     }
