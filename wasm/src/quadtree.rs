@@ -1,8 +1,8 @@
+use std::mem;
 use na::Point2;
 use py::Holds;
 use crate::quadtree::area::Area;
 use crate::quadtree::division::Division;
-use crate::quadtree::quarter::Quarter;
 
 mod area;
 mod division;
@@ -34,31 +34,32 @@ impl Node {
     }
 
     fn insert<A: Division>(&mut self, element: Tree, at: &A) {
-        let quarter = self.area.quarter(at.anchor());
-        let current = &mut self.children[quarter as usize];
+        let idx = self.area.quarter(at.anchor()) as usize;
+        let current = mem::replace(&mut self.children[idx], Tree::Empty);
 
         match current {
             Tree::Empty => {
-                *current = element;
+                self.children[idx] = element;
             },
-            Tree::Leaf(ref pt) => {
-                let mut node = Node::new(Area::common(pt, at));
+            Tree::Leaf(pt) => {
+                let mut node = Node::new(Area::common(&pt, at));
 
-                node.insert(Tree::Leaf(*pt), pt);
+                node.insert(current, &pt);
                 node.insert(element, at);
 
-                *current = Tree::Node(Box::new(node));
+                self.children[idx] = Tree::Node(Box::new(node));
             },
-            Tree::Node(child) => {
+            Tree::Node(mut child) => {
                 if child.area.holds(at) {
                     child.insert(element, at);
                 } else {
-                    let mut node = Node::new(Area::common(&child.area, at));
+                    let area = child.area;
+                    let mut node = Node::new(Area::common(&area, at));
 
-                    node.insert(Tree::Node(child.clone()), &child.area);
+                    node.insert(Tree::Node(child), &area);
                     node.insert(element, at);
 
-                    *current = Tree::Node(Box::new(node));
+                    self.children[idx] = Tree::Node(Box::new(node));
                 }
             },
         }
