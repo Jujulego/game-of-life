@@ -3,10 +3,10 @@ use na::Point2;
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Quarter {
-    NorthEast,
-    NorthWest,
-    SouthEast,
-    SouthWest
+    NorthEast = 0,
+    NorthWest = 1,
+    SouthEast = 2,
+    SouthWest = 3,
 }
 
 pub fn quarter(origin: &Point2<i32>, point: &Point2<i32>) -> Quarter {

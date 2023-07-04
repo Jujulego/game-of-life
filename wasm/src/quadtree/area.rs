@@ -2,7 +2,7 @@ use std::cmp::{max, min};
 use na::{point, Point2};
 use py::Holds;
 use crate::quadtree::division::Division;
-use crate::quadtree::quarter::quarter;
+use crate::quadtree::quarter::{quarter, Quarter};
 
 /// An area in the quadtree
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -21,23 +21,23 @@ impl Area {
     }
 
     /// Returns smallest area containing given division and point
-    pub fn common<A: Division>(division: &A, point: &Point2<i32>) -> Area {
+    pub fn common<A: Division, B: Division>(a: &A, b: &B) -> Area {
         // Checks global quarters
-        let global_quarter = quarter(&Point2::origin(), division.anchor());
+        let global_quarter = quarter(&Point2::origin(), a.anchor());
 
-        if global_quarter != quarter(&Point2::origin(), point.anchor()) {
+        if global_quarter != quarter(&Point2::origin(), b.anchor()) {
             return Area::global();
         }
 
         // Extreme points
         let start = point![
-            min(division.anchor().x, point.anchor().x),
-            min(division.anchor().y, point.anchor().y)
+            min(a.anchor().x, b.anchor().x),
+            min(a.anchor().y, b.anchor().y)
         ];
 
         let end = point![
-            max(division.anchor().x + division.size() as i32 - 1, point.anchor().x + point.size() as i32 - 1),
-            max(division.anchor().y + division.size() as i32 - 1, point.anchor().y + point.size() as i32 - 1)
+            max(a.anchor().x + a.size() as i32 - 1, b.anchor().x + b.size() as i32 - 1),
+            max(a.anchor().y + a.size() as i32 - 1, b.anchor().y + b.size() as i32 - 1)
         ];
 
         // Compute common area
@@ -68,6 +68,33 @@ impl Area {
         }
 
         Area::global()
+    }
+
+    fn center(&self) -> Point2<i32> {
+        if self.size == u32::MAX {
+            Point2::origin()
+        } else {
+            let delta = self.size as i32 / 2;
+
+            point![
+                self.anchor.x + delta,
+                self.anchor.y + delta
+            ]
+        }
+    }
+
+    pub fn quarter(&self, point: &Point2<i32>) -> Quarter {
+        let center = self.center();
+
+        if point.x < center.x && point.y < center.y {
+            Quarter::SouthWest
+        } else if point.x < center.x {
+            Quarter::NorthWest
+        } else if point.y < center.y {
+            Quarter::SouthEast
+        } else {
+            Quarter::NorthEast
+        }
     }
 }
 
@@ -102,6 +129,24 @@ impl<D: Division> Holds<D> for Area {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_global_quarter() {
+        assert_eq!(Area::global().quarter(&point![1, 1]), Quarter::NorthEast);
+        assert_eq!(Area::global().quarter(&point![1, -1]), Quarter::SouthEast);
+        assert_eq!(Area::global().quarter(&point![-1, 1]), Quarter::NorthWest);
+        assert_eq!(Area::global().quarter(&point![-1, -1]), Quarter::SouthWest);
+    }
+
+    #[test]
+    fn test_local_quarter() {
+        let area = Area { anchor: point![0, 0], size: 4 };
+
+        assert_eq!(area.quarter(&point![3, 3]), Quarter::NorthEast);
+        assert_eq!(area.quarter(&point![3, 1]), Quarter::SouthEast);
+        assert_eq!(area.quarter(&point![1, 3]), Quarter::NorthWest);
+        assert_eq!(area.quarter(&point![1, 1]), Quarter::SouthWest);
+    }
 
     mod common {
         use super::*;
