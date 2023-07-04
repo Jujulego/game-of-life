@@ -3,7 +3,6 @@ use na::{point, Point2};
 use py::Holds;
 use crate::quadtree::division::Division;
 use crate::quadtree::quarter::quarter;
-use crate::quadtree::quarter::Quarter::NorthEast;
 
 /// An area in the quadtree
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -13,6 +12,7 @@ pub struct Area {
 }
 
 impl Area {
+    /// Area holding everything
     pub fn global() -> Area {
         Area {
             anchor: Point2::origin(),
@@ -20,53 +20,54 @@ impl Area {
         }
     }
 
-    pub fn common<A: Division, B: Division>(a: &A, b: &B) -> Area {
+    /// Returns smallest area containing given division and point
+    pub fn common<A: Division>(division: &A, point: &Point2<i32>) -> Area {
         // Checks global quarters
-        let global_quarter = quarter(&Point2::origin(), a.anchor());
+        let global_quarter = quarter(&Point2::origin(), division.anchor());
 
-        if global_quarter != quarter(&Point2::origin(), b.anchor()) {
-            Area::global()
-        } else {
-            // Extreme points
-            let start = point![
-                min(a.anchor().x, b.anchor().x),
-                min(a.anchor().y, b.anchor().y)
-            ];
+        if global_quarter != quarter(&Point2::origin(), point.anchor()) {
+            return Area::global();
+        }
 
-            let end = point![
-                max(a.anchor().x + a.size() as i32 - 1, b.anchor().x + b.size() as i32 - 1),
-                max(a.anchor().y + a.size() as i32 - 1, b.anchor().y + b.size() as i32 - 1)
-            ];
+        // Extreme points
+        let start = point![
+            min(division.anchor().x, point.anchor().x),
+            min(division.anchor().y, point.anchor().y)
+        ];
 
-            // Compute common area
-            let span = max(
-                (end.x - start.x) as u32,
-                (end.y - start.y) as u32,
+        let end = point![
+            max(division.anchor().x + division.size() as i32 - 1, point.anchor().x + point.size() as i32 - 1),
+            max(division.anchor().y + division.size() as i32 - 1, point.anchor().y + point.size() as i32 - 1)
+        ];
+
+        // Compute common area
+        let span = max(
+            (end.x - start.x) as u32,
+            (end.y - start.y) as u32,
+        );
+
+        let mut bits = u32::BITS - span.leading_zeros();
+
+        while bits < u32::BITS {
+            let mask = i32::MAX << bits;
+            let size = 1 << bits;
+
+            let anchor = point![start.x & mask, start.y & mask];
+
+            // Correct exact bound case
+            let overflow = max(
+                end.x.abs_diff(anchor.x),
+                end.y.abs_diff(anchor.y)
             );
 
-            let bits = u32::BITS - span.leading_zeros();
-            let mask = i32::MAX << bits;
-
-            let anchor= point![
-                start.x & mask,
-                start.y & mask
-            ];
-            let mut size = 1 << bits;
-
-            // Correct max negative cases
-            if global_quarter != NorthEast {
-                let overflow = max(
-                    end.x.abs_diff(anchor.x),
-                    end.y.abs_diff(anchor.y)
-                );
-
-                if overflow == size {
-                    size *= 2;
-                }
+            if overflow == size {
+                bits += 1;
+            } else {
+                return Area { anchor, size };
             }
-
-            Area { anchor, size }
         }
+
+        Area::global()
     }
 }
 
@@ -122,7 +123,7 @@ mod tests {
             );
             assert_eq!(
                 Area::common(&point![4, 4], &point![8, 8]),
-                Area { anchor: point![0, 0], size: 8 }
+                Area { anchor: point![0, 0], size: 16 }
             );
 
             // Negative
@@ -138,6 +139,39 @@ mod tests {
             // Different quarter
             assert_eq!(
                 Area::common(&point![-7, -7], &point![8, 8]),
+                Area::global()
+            );
+        }
+
+        #[test]
+        fn test_area_point() {
+            // Positive
+            assert_eq!(
+                Area::common(&Area { anchor: point![6, 6], size: 2 }, &point![4, 4]),
+                Area { anchor: point![4, 4], size: 4 }
+            );
+            assert_eq!(
+                Area::common(&Area { anchor: point![2, 4], size: 2 }, &point![6, 4]),
+                Area { anchor: point![0, 0], size: 8 }
+            );
+            assert_eq!(
+                Area::common(&Area { anchor: point![4, 2], size: 2 }, &point![4, 6]),
+                Area { anchor: point![0, 0], size: 8 }
+            );
+
+            // Negative
+            assert_eq!(
+                Area::common(&Area { anchor: point![-2, -4], size: 2 }, &point![-6, -4]),
+                Area { anchor: point![-8, -8], size: 8 }
+            );
+            assert_eq!(
+                Area::common(&Area { anchor: point![-4, -2], size: 2 }, &point![-4, -6]),
+                Area { anchor: point![-8, -8], size: 8 }
+            );
+
+            // Different quarter
+            assert_eq!(
+                Area::common(&Area { anchor: point![-6, -6], size: 2 }, &point![8, 8]),
                 Area::global()
             );
         }
