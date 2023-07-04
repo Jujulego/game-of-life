@@ -1,9 +1,8 @@
 use std::slice::Iter;
 use na::Point2;
-use py::{BBox, Holds};
+use py::{Holds, Walkable};
 use crate::binary_query::BinaryQuery;
 use crate::utils::cmp_xy_order;
-use crate::xy_generator::XYGenerator;
 
 /// Quadtree
 #[derive(Clone)]
@@ -33,15 +32,15 @@ impl BinaryTree {
     }
 
     /// Returns all elements inside the given area
-    pub fn search(&self, area: BBox<i32, 2>) -> Vec<Point2<i32>> {
+    pub fn search<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> Vec<Point2<i32>> {
         let mut result = Vec::new();
 
         if self.elements.is_empty() {
             return result;
         }
 
-        let generator = XYGenerator::within(&area);
-        let mut point = *generator.first();
+        let walker = area.walk().unwrap();
+        let mut point = *walker.first();
         let mut slice = self.elements.as_slice();
 
         loop {
@@ -74,7 +73,7 @@ impl BinaryTree {
             }
 
             // Compute next point
-            if let Some(pt) = generator.next(&point) {
+            if let Some(pt) = walker.next(&point) {
                 point = pt;
             } else {
                 break;
@@ -84,7 +83,7 @@ impl BinaryTree {
         result
     }
 
-    pub fn query(&self, area: BBox<i32, 2>) -> BinaryQuery<'_> {
+    pub fn query<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> BinaryQuery<'_, B> {
         BinaryQuery::new(area, self.elements.as_slice())
     }
 
@@ -117,7 +116,7 @@ mod tests {
     #[test]
     fn test_quadtree_search() {
         let mut quadtree = BinaryTree::new();
-        let area = BBox::from(point![5, 5]..=point![10, 10]);
+        let area = point![5, 5]..=point![10, 10];
 
         quadtree.insert(point![0, 5]);
         quadtree.insert(point![5, 5]);
@@ -141,7 +140,7 @@ mod tests {
     #[test]
     fn test_quadtree_query() {
         let mut quadtree = BinaryTree::new();
-        let area = BBox::from(point![5, 5]..=point![10, 10]);
+        let area = point![5, 5]..=point![10, 10];
 
         quadtree.insert(point![0, 5]);
         quadtree.insert(point![5, 5]);

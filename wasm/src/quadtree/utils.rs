@@ -1,6 +1,7 @@
 use std::cmp::{max, min};
 use na::{point, Point2, vector};
-use py::{BBox, BoundPoints};
+use num_traits::Bounded;
+use py::{BBox, PointBounds};
 
 /// Build bbox around a single point
 pub fn bbox_around(pt: &Point2<i32>) -> BBox<i32, 2> {
@@ -9,8 +10,8 @@ pub fn bbox_around(pt: &Point2<i32>) -> BBox<i32, 2> {
 
 /// Computes bbox of parent node
 pub fn parent_bbox(child: &BBox<i32, 2>) -> BBox<i32, 2> {
-    let start = child.start_point();
-    let end = child.end_point();
+    let start = child.start_point().unwrap_or(Point2::min_value());
+    let end = child.end_point().unwrap_or(Point2::max_value());
 
     let size = (end - start) * 2;
     let start = point![start.x & !(size.x - 1), start.y & !(size.y - 1)];

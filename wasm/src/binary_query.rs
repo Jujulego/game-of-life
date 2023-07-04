@@ -1,34 +1,33 @@
 use std::iter::FusedIterator;
 use na::Point2;
-use py::{BBox, Holds};
+use py::{BBoxWalker, Holds, Walkable};
 use crate::utils::cmp_xy_order;
-use crate::xy_generator::XYGenerator;
 
-pub struct BinaryQuery<'a> {
-    area: BBox<i32, 2>,
+pub struct BinaryQuery<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> {
+    area: B,
     slice: &'a [Point2<i32>],
-    generator: XYGenerator,
+    walker: BBoxWalker<i32, 2>,
     next: Option<Point2<i32>>,
 }
 
-impl<'a> BinaryQuery<'a> {
-    pub fn new(area: BBox<i32, 2>, slice: &'a [Point2<i32>]) -> BinaryQuery<'a> {
-        let generator = XYGenerator::within(&area);
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> BinaryQuery<'a, B> {
+    pub fn new(area: B, slice: &'a [Point2<i32>]) -> BinaryQuery<'a, B> {
+        let generator = area.walk().unwrap();
 
         BinaryQuery {
             area,
             slice,
             next: Some(*generator.first()),
-            generator,
+            walker: generator,
         }
     }
 
     fn update_next(&mut self, last: &Point2<i32>) {
-        self.next = self.generator.next(last);
+        self.next = self.walker.next(last);
     }
 }
 
-impl<'a> Iterator for BinaryQuery<'a> {
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> Iterator for BinaryQuery<'a, B> {
     type Item = &'a Point2<i32>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -72,4 +71,4 @@ impl<'a> Iterator for BinaryQuery<'a> {
     }
 }
 
-impl<'a> FusedIterator for BinaryQuery<'a> {}
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> FusedIterator for BinaryQuery<'a, B> {}

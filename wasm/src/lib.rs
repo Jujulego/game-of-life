@@ -7,4 +7,3 @@ mod quadtree;
 mod universe;
 mod universe_style;
 mod utils;
-mod xy_generator;
