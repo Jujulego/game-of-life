@@ -33,6 +33,20 @@ impl Node {
         }
     }
 
+    fn has(&self, point: &Point2<i32>) -> bool {
+        let idx = self.area.quarter(point) as usize;
+
+        match &self.children[idx] {
+            Tree::Empty => false,
+            Tree::Leaf(pt) => {
+                point == pt
+            },
+            Tree::Node(child) => {
+                child.area.holds(point) && child.has(point)
+            },
+        }
+    }
+
     fn insert<A: Division>(&mut self, element: Tree, at: &A) {
         let idx = self.area.quarter(at.anchor()) as usize;
         let current = mem::replace(&mut self.children[idx], Tree::Empty);
@@ -78,6 +92,10 @@ impl Quadtree {
         }
     }
 
+    pub fn has(&self, point: &Point2<i32>) -> bool {
+        self.root.has(point)
+    }
+
     pub fn insert(&mut self, point: Point2<i32>) {
         self.root.insert(Tree::Leaf(point), &point);
     }
@@ -87,8 +105,25 @@ impl Quadtree {
 #[cfg(test)]
 mod tests {
     use na::point;
-    use crate::quadtree::area::Area;
-    use crate::quadtree::{Node, Tree};
+    use super::*;
+
+    #[test]
+    fn test_has_point() {
+        // Initiate tree
+        let mut tree = Quadtree::new();
+        tree.insert(point![3, 1]);
+        tree.insert(point![3, 3]);
+        tree.insert(point![3, 5]);
+
+        // Inserted points
+        assert!(tree.has(&point![3, 1]));
+        assert!(tree.has(&point![3, 3]));
+        assert!(tree.has(&point![3, 5]));
+
+        // Others
+        assert!(!tree.has(&point![0, 0]));
+        assert!(!tree.has(&point![12, 42]));
+    }
 
     #[test]
     fn test_insert_point() {
