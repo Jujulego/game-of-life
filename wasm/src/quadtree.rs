@@ -10,7 +10,7 @@ mod quarter;
 mod point;
 
 /// Quadtree itself
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Tree {
     Leaf(Point2<i32>),
     Node(Box<Node>),
@@ -18,7 +18,7 @@ enum Tree {
 }
 
 /// Quadtree node
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 struct Node {
     area: Area,
     children: [Tree; 4],
@@ -80,5 +80,102 @@ impl Quadtree {
 
     pub fn insert(&mut self, point: Point2<i32>) {
         self.root.insert(Tree::Leaf(point), &point);
+    }
+}
+
+// Tests
+#[cfg(test)]
+mod tests {
+    use na::point;
+    use crate::quadtree::area::Area;
+    use crate::quadtree::{Node, Tree};
+
+    #[test]
+    fn test_insert_point() {
+        // Initiate tree
+        let mut root = Node::new(Area::global());
+
+        assert_eq!(
+            root,
+            Node {
+                area: Area::global(),
+                children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty]
+            }
+        );
+
+        // Insert a point
+        let point = point![3, 1];
+        root.insert(Tree::Leaf(point), &point);
+
+        assert_eq!(
+            root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Leaf(point![3, 1]),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Create a middle node
+        let point = point![3, 3];
+        root.insert(Tree::Leaf(point), &point);
+
+        assert_eq!(
+            root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Node(Box::new(Node {
+                        area: Area { anchor: point![0, 0], size: 4 },
+                        children: [
+                            Tree::Leaf(point![3, 3]),
+                            Tree::Empty,
+                            Tree::Leaf(point![3, 1]),
+                            Tree::Empty
+                        ]
+                    })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Move the middle node
+        let point = point![3, 5];
+        root.insert(Tree::Leaf(point), &point);
+
+        assert_eq!(
+            root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Node(Box::new(Node {
+                        area: Area { anchor: point![0, 0], size: 8 },
+                        children: [
+                            Tree::Empty,
+                            Tree::Leaf(point![3, 5]),
+                            Tree::Empty,
+                            Tree::Node(Box::new(Node {
+                                area: Area { anchor: point![0, 0], size: 4 },
+                                children: [
+                                    Tree::Leaf(point![3, 3]),
+                                    Tree::Empty,
+                                    Tree::Leaf(point![3, 1]),
+                                    Tree::Empty
+                                ]
+                            })),
+                        ],
+                    })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
     }
 }
