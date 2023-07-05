@@ -1,14 +1,16 @@
 use na::Point2;
 use crate::quadtree::area::Area;
+use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
 use crate::quadtree::tree::Tree;
 
 mod area;
 mod division;
-mod quarter;
-mod point;
-mod tree;
+mod iter;
 mod node;
+mod point;
+mod quarter;
+mod tree;
 
 /// Quadtree wrapper
 pub struct Quadtree {
@@ -22,16 +24,42 @@ impl Quadtree {
         }
     }
 
+    #[inline]
     pub fn has(&self, point: &Point2<i32>) -> bool {
         self.root.has(point)
     }
 
+    #[inline]
+    pub fn iter(&self) -> Iter<'_> {
+        Iter::new(&self.root)
+    }
+
+    #[inline]
     pub fn insert(&mut self, point: Point2<i32>) {
         self.root.insert(Tree::Leaf(point), &point);
     }
 
+    #[inline]
     pub fn remove(&mut self, point: &Point2<i32>) {
         self.root.remove(point);
+    }
+}
+
+// Utils
+impl Default for Quadtree {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> IntoIterator for &'a Quadtree {
+    type Item = &'a Point2<i32>;
+    type IntoIter = Iter<'a>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -57,6 +85,23 @@ mod tests {
         // Others
         assert!(!tree.has(&point![0, 0]));
         assert!(!tree.has(&point![12, 42]));
+    }
+
+    #[test]
+    fn test_iterator() {
+        // Initiate tree
+        let mut tree = Quadtree::new();
+        tree.insert(point![3, 1]);
+        tree.insert(point![3, 3]);
+        tree.insert(point![3, 5]);
+
+        // Inserted points
+        let mut iter = tree.iter();
+
+        assert_eq!(iter.next(), Some(&point![3, 1]));
+        assert_eq!(iter.next(), Some(&point![3, 3]));
+        assert_eq!(iter.next(), Some(&point![3, 5]));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
