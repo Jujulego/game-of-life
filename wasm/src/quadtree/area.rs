@@ -7,8 +7,8 @@ use crate::quadtree::quarter::{quarter, Quarter};
 /// An area in the quadtree
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Area {
-    pub(crate) anchor: Point2<i32>,
-    pub(crate) size: u32,
+    pub anchor: Point2<i32>,
+    pub size: u32,
 }
 
 impl Area {
