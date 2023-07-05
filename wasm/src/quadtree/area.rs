@@ -60,7 +60,7 @@ impl Area {
                 end.y.abs_diff(anchor.y)
             );
 
-            if overflow == size {
+            if overflow >= size {
                 bits += 1;
             } else {
                 return Area { anchor, size };
@@ -218,6 +218,14 @@ mod tests {
             assert_eq!(
                 Area::common(&Area { anchor: point![-6, -6], size: 2 }, &point![8, 8]),
                 Area::global()
+            );
+        }
+
+        #[test]
+        fn test_strange() {
+            assert_eq!(
+                Area::common(&Area { anchor: point![130, 46], size: 2 }, &point![133, 47]),
+                Area { anchor: point![128, 40], size: 8 }
             );
         }
     }

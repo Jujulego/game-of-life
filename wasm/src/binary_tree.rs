@@ -32,57 +32,6 @@ impl BinaryTree {
     }
 
     /// Returns all elements inside the given area
-    pub fn search<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> Vec<Point2<i32>> {
-        let mut result = Vec::new();
-
-        if self.elements.is_empty() {
-            return result;
-        }
-
-        let walker = area.walk().unwrap();
-        let mut point = *walker.first();
-        let mut slice = self.elements.as_slice();
-
-        loop {
-            let first = unsafe { slice.get_unchecked(0) };
-
-            if area.holds(first) {
-                result.push(*first);
-                point = *first;
-
-                slice = &slice[1..];
-            } else {
-                // Search point
-                let res = slice.binary_search_by(|pt| cmp_xy_order(pt, &point));
-
-                // Handle result
-                if let Ok(idx) = res {
-                    result.push(point);
-                    slice = unsafe { slice.get_unchecked(idx + 1..) };
-                } else {
-                    slice = unsafe {
-                        let idx = res.unwrap_err_unchecked();
-                        slice.get_unchecked(idx..)
-                    };
-                }
-            }
-
-            // Reach end of elements
-            if slice.is_empty() {
-                break;
-            }
-
-            // Compute next point
-            if let Some(pt) = walker.next(&point) {
-                point = pt;
-            } else {
-                break;
-            }
-        }
-
-        result
-    }
-
     pub fn query<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> BinaryQuery<'_, B> {
         BinaryQuery::new(area, self.elements.as_slice())
     }
@@ -114,44 +63,20 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_quadtree_search() {
-        let mut quadtree = BinaryTree::new();
+    fn test_tree_query() {
+        let mut tree = BinaryTree::new();
         let area = point![5, 5]..=point![10, 10];
 
-        quadtree.insert(point![0, 5]);
-        quadtree.insert(point![5, 5]);
-        quadtree.insert(point![5, 10]);
-        quadtree.insert(point![5, 15]);
-        quadtree.insert(point![10, 5]);
-        quadtree.insert(point![10, 10]);
-        quadtree.insert(point![15, 10]);
+        tree.insert(point![0, 5]);
+        tree.insert(point![5, 5]);
+        tree.insert(point![5, 10]);
+        tree.insert(point![5, 15]);
+        tree.insert(point![10, 5]);
+        tree.insert(point![10, 10]);
+        tree.insert(point![15, 10]);
 
         assert_eq!(
-            quadtree.search(area),
-            vec![
-                point![5, 5],
-                point![5, 10],
-                point![10, 5],
-                point![10, 10],
-            ]
-        );
-    }
-
-    #[test]
-    fn test_quadtree_query() {
-        let mut quadtree = BinaryTree::new();
-        let area = point![5, 5]..=point![10, 10];
-
-        quadtree.insert(point![0, 5]);
-        quadtree.insert(point![5, 5]);
-        quadtree.insert(point![5, 10]);
-        quadtree.insert(point![5, 15]);
-        quadtree.insert(point![10, 5]);
-        quadtree.insert(point![10, 10]);
-        quadtree.insert(point![15, 10]);
-
-        assert_eq!(
-            quadtree.query(area).copied().collect::<Vec<Point2<i32>>>(),
+            tree.query(area).copied().collect::<Vec<Point2<i32>>>(),
             vec![
                 point![5, 5],
                 point![5, 10],

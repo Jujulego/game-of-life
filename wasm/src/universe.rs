@@ -1,16 +1,19 @@
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
+use py::Walkable;
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 use crate::binary_tree::BinaryTree;
+use crate::quadtree::Quadtree;
 use crate::universe_style::UniverseStyle;
 
 /// Life universe
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    cells: BinaryTree,
+    // cells: BinaryTree,
+    cells: Quadtree,
     size: Vector2<usize>,
     style: UniverseStyle,
 }
@@ -20,7 +23,8 @@ impl Universe {
     /// Builds a dead universe
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
-            cells: BinaryTree::new(),
+            // cells: BinaryTree::new(),
+            cells: Quadtree::new(),
             size: vector![width, height],
             style: UniverseStyle::default(),
         }
@@ -73,10 +77,10 @@ impl Universe {
 
                 if cell {
                     if !(2..=3).contains(&live_neighbors) {
-                        self.set_dead(point)
+                        self.set_dead(point);
                     }
                 } else if live_neighbors == 3 {
-                    self.set_alive(point)
+                    self.set_alive(point);
                 }
             }
         }
@@ -145,8 +149,12 @@ impl Universe {
         //     .iter()
         //     .filter(|&pt| pt != point)
         //     .count()
-        self.cells.query(area)
-            .filter(|&pt| pt != point)
+        // self.cells.query(area)
+        //     .filter(|&pt| pt != point)
+        //     .count()
+        area.walk().unwrap()
+            .iter()
+            .filter(|pt| pt != point && self.cells.has(pt))
             .count()
     }
 }

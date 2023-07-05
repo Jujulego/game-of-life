@@ -13,6 +13,7 @@ mod quarter;
 mod tree;
 
 /// Quadtree wrapper
+#[derive(Clone, Debug)]
 pub struct Quadtree {
     root: Node,
 }
