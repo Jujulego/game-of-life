@@ -38,13 +38,25 @@ impl Node {
 
         match &self.children[idx] {
             Tree::Empty => false,
-            Tree::Leaf(pt) => {
-                point == pt
-            },
-            Tree::Node(child) => {
-                child.area.holds(point) && child.has(point)
-            },
+            Tree::Leaf(pt) => point == pt,
+            Tree::Node(child) => child.area.holds(point) && child.has(point),
         }
+    }
+
+    fn children_count(&self) -> usize {
+        self.children.iter()
+            .filter(|&t| t != &Tree::Empty)
+            .count()
+    }
+
+    fn extract_child(&mut self) -> Tree {
+        for child in &mut self.children[..] {
+            if child != &Tree::Empty {
+                return mem::replace(child, Tree::Empty);
+            }
+        }
+
+        Tree::Empty
     }
 
     fn insert<A: Division>(&mut self, element: Tree, at: &A) {
@@ -66,6 +78,7 @@ impl Node {
             Tree::Node(mut child) => {
                 if child.area.holds(at) {
                     child.insert(element, at);
+                    self.children[idx] = Tree::Node(child);
                 } else {
                     let area = child.area;
                     let mut node = Node::new(Area::common(&area, at));
@@ -76,6 +89,30 @@ impl Node {
                     self.children[idx] = Tree::Node(Box::new(node));
                 }
             },
+        }
+    }
+
+    fn remove(&mut self, point: &Point2<i32>) {
+        let idx = self.area.quarter(point) as usize;
+
+        match &mut self.children[idx] {
+            Tree::Empty => (),
+            Tree::Leaf(pt) => {
+                if pt == point {
+                    self.children[idx] = Tree::Empty;
+                }
+            }
+            Tree::Node(child) => {
+                if child.area.holds(point) {
+                    child.remove(point);
+
+                    match child.children_count() {
+                        0 => self.children[idx] = Tree::Empty,
+                        1 => self.children[idx] = child.extract_child(),
+                        _ => ()
+                    }
+                }
+            }
         }
     }
 }
@@ -98,6 +135,10 @@ impl Quadtree {
 
     pub fn insert(&mut self, point: Point2<i32>) {
         self.root.insert(Tree::Leaf(point), &point);
+    }
+
+    pub fn remove(&mut self, point: &Point2<i32>) {
+        self.root.remove(point);
     }
 }
 
@@ -128,10 +169,10 @@ mod tests {
     #[test]
     fn test_insert_point() {
         // Initiate tree
-        let mut root = Node::new(Area::global());
+        let mut tree = Quadtree::new();
 
         assert_eq!(
-            root,
+            tree.root,
             Node {
                 area: Area::global(),
                 children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty]
@@ -139,11 +180,10 @@ mod tests {
         );
 
         // Insert a point
-        let point = point![3, 1];
-        root.insert(Tree::Leaf(point), &point);
+        tree.insert(point![3, 1]);
 
         assert_eq!(
-            root,
+            tree.root,
             Node {
                 area: Area::global(),
                 children: [
@@ -156,11 +196,34 @@ mod tests {
         );
 
         // Create a middle node
-        let point = point![3, 3];
-        root.insert(Tree::Leaf(point), &point);
+        tree.insert(point![1, 3]);
 
         assert_eq!(
-            root,
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Node(Box::new(Node {
+                        area: Area { anchor: point![0, 0], size: 4 },
+                        children: [
+                            Tree::Empty,
+                            Tree::Leaf(point![1, 3]),
+                            Tree::Leaf(point![3, 1]),
+                            Tree::Empty
+                        ]
+                    })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Insert in middle node
+        tree.insert(point![3, 3]);
+
+        assert_eq!(
+            tree.root,
             Node {
                 area: Area::global(),
                 children: [
@@ -168,7 +231,7 @@ mod tests {
                         area: Area { anchor: point![0, 0], size: 4 },
                         children: [
                             Tree::Leaf(point![3, 3]),
-                            Tree::Empty,
+                            Tree::Leaf(point![1, 3]),
                             Tree::Leaf(point![3, 1]),
                             Tree::Empty
                         ]
@@ -181,11 +244,10 @@ mod tests {
         );
 
         // Move the middle node
-        let point = point![3, 5];
-        root.insert(Tree::Leaf(point), &point);
+        tree.insert(point![3, 5]);
 
         assert_eq!(
-            root,
+            tree.root,
             Node {
                 area: Area::global(),
                 children: [
@@ -199,13 +261,95 @@ mod tests {
                                 area: Area { anchor: point![0, 0], size: 4 },
                                 children: [
                                     Tree::Leaf(point![3, 3]),
-                                    Tree::Empty,
+                                    Tree::Leaf(point![1, 3]),
                                     Tree::Leaf(point![3, 1]),
                                     Tree::Empty
                                 ]
                             })),
                         ],
                     })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+    }
+
+    #[test]
+    fn test_remove_point() {
+        // Initiate tree
+        let mut tree = Quadtree::new();
+        tree.insert(point![3, 1]);
+        tree.insert(point![3, 3]);
+        tree.insert(point![1, 3]);
+        tree.insert(point![3, 5]);
+
+        // Remove point
+        tree.remove(&point![3, 3]);
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Node(Box::new(Node {
+                        area: Area { anchor: point![0, 0], size: 8 },
+                        children: [
+                            Tree::Empty,
+                            Tree::Leaf(point![3, 5]),
+                            Tree::Empty,
+                            Tree::Node(Box::new(Node {
+                                area: Area { anchor: point![0, 0], size: 4 },
+                                children: [
+                                    Tree::Empty,
+                                    Tree::Leaf(point![1, 3]),
+                                    Tree::Leaf(point![3, 1]),
+                                    Tree::Empty
+                                ]
+                            })),
+                        ],
+                    })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Simplify by moving node up
+        tree.remove(&point![3, 5]);
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Node(Box::new(Node {
+                        area: Area { anchor: point![0, 0], size: 4 },
+                        children: [
+                            Tree::Empty,
+                            Tree::Leaf(point![1, 3]),
+                            Tree::Leaf(point![3, 1]),
+                            Tree::Empty
+                        ]
+                    })),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Simplify by moving point up
+        tree.remove(&point![1, 3]);
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Leaf(point![3, 1]),
                     Tree::Empty,
                     Tree::Empty,
                     Tree::Empty
