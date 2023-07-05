@@ -19,17 +19,14 @@ impl<'a> Iterator for Iter<'a> {
     type Item = &'a Point2<i32>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while !self.stack.is_empty() {
-            let node = self.stack.pop().unwrap();
-
-            match node {
-                Tree::Empty => (),
-                Tree::Leaf(pt) => return Some(pt),
-                Tree::Node(child) => self.stack.extend(&child.children[..]),
+        loop {
+            match self.stack.pop() {
+                None => return None,
+                Some(Tree::Empty) => (),
+                Some(Tree::Leaf(pt)) => return Some(pt),
+                Some(Tree::Node(child)) => self.stack.extend(&child.children),
             }
         }
-
-        None
     }
 }
 
