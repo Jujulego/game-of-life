@@ -33,34 +33,31 @@ impl Node {
 
     pub fn insert<A: Division>(&mut self, element: Tree, at: &A) {
         let idx = self.area.quarter(at.anchor()) as usize;
-        let current = mem::replace(&mut self.children[idx], Tree::Empty);
+        let pos = unsafe { self.children.get_unchecked_mut(idx) };
 
-        match current {
-            Tree::Empty => {
-                self.children[idx] = element;
+        match pos {
+            Tree::Empty => *pos = element,
+            &mut Tree::Leaf(pt) => {
+                let mut upper = Box::new(Node::new(Area::common(&pt, at)));
+
+                upper.insert(mem::replace(pos, Tree::Empty), &pt);
+                upper.insert(element, at);
+
+                *pos = Tree::Node(upper);
             },
-            Tree::Leaf(pt) => {
-                let mut node = Node::new(Area::common(&pt, at));
-
-                node.insert(current, &pt);
-                node.insert(element, at);
-
-                self.children[idx] = Tree::Node(Box::new(node));
-            },
-            Tree::Node(mut child) => {
-                if child.area.holds(at) {
-                    child.insert(element, at);
-                    self.children[idx] = Tree::Node(child);
-                } else {
-                    let area = child.area;
-                    let mut node = Node::new(Area::common(&area, at));
-
-                    node.insert(Tree::Node(child), &area);
+            Tree::Node(node) => {
+                if node.area.holds(at) {
                     node.insert(element, at);
+                } else {
+                    let area = node.area;
+                    let mut upper = Box::new(Node::new(Area::common(&area, at)));
 
-                    self.children[idx] = Tree::Node(Box::new(node));
+                    upper.insert(mem::replace(pos, Tree::Empty), &area);
+                    upper.insert(element, at);
+
+                    *pos = Tree::Node(upper);
                 }
-            },
+            }
         }
     }
 
