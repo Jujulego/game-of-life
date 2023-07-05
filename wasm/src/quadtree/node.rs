@@ -61,40 +61,37 @@ impl Node {
         }
     }
 
-    fn children_count(&self) -> usize {
-        self.children.iter()
-            .filter(|&t| t != &Tree::Empty)
-            .count()
-    }
-
-    fn extract_child(&mut self) -> Tree {
-        for child in &mut self.children[..] {
-            if child != &Tree::Empty {
-                return mem::replace(child, Tree::Empty);
-            }
-        }
-
-        Tree::Empty
-    }
-
     pub fn remove(&mut self, point: &Point2<i32>) {
         let idx = self.area.quarter(point) as usize;
+        let pos = unsafe { self.children.get_unchecked_mut(idx) };
 
-        match &mut self.children[idx] {
+        match pos {
             Tree::Empty => (),
-            Tree::Leaf(pt) => {
+            Tree::Leaf(ref pt) => {
                 if pt == point {
-                    self.children[idx] = Tree::Empty;
+                    *pos = Tree::Empty;
                 }
             }
-            Tree::Node(child) => {
-                if child.area.holds(point) {
-                    child.remove(point);
+            Tree::Node(node) => {
+                if node.area.holds(point) {
+                    node.remove(point);
 
-                    match child.children_count() {
-                        0 => self.children[idx] = Tree::Empty,
-                        1 => self.children[idx] = child.extract_child(),
-                        _ => ()
+                    let mut last = None;
+
+                    for child in &mut node.children {
+                        if child != &Tree::Empty {
+                            if last.is_none() {
+                                last = Some(child);
+                            } else {
+                                return;
+                            }
+                        }
+                    }
+
+                    if let Some(last) = last {
+                        *pos = mem::replace(last, Tree::Empty);
+                    } else {
+                        *pos = Tree::Empty;
                     }
                 }
             }
