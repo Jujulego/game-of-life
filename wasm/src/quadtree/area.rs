@@ -25,45 +25,34 @@ impl Area {
         // Checks global quarters
         let global_quarter = quarter(&Point2::origin(), a.anchor());
 
-        if global_quarter != quarter(&Point2::origin(), b.anchor()) {
-            return Area::global();
-        }
+        if global_quarter == quarter(&Point2::origin(), b.anchor()) {
+            // Extreme points
+            let start = point![
+                min(a.anchor().x, b.anchor().x),
+                min(a.anchor().y, b.anchor().y)
+            ];
+            let end = point![
+                max(a.anchor().x, b.anchor().x),
+                max(a.anchor().y, b.anchor().y)
+            ];
 
-        // Extreme points
-        let start = point![
-            min(a.anchor().x, b.anchor().x),
-            min(a.anchor().y, b.anchor().y)
-        ];
+            // Compute common area
+            let mut bits = max(a.size(), b.size()).trailing_zeros() + 1;
 
-        let end = point![
-            max(a.anchor().x + a.size() as i32 - 1, b.anchor().x + b.size() as i32 - 1),
-            max(a.anchor().y + a.size() as i32 - 1, b.anchor().y + b.size() as i32 - 1)
-        ];
+            while bits < u32::BITS {
+                let mask = (u32::MAX << bits) as i32;
 
-        // Compute common area
-        let span = max(
-            (end.x - start.x) as u32,
-            (end.y - start.y) as u32,
-        );
+                let area = Area {
+                    anchor: point![start.x & mask, start.y & mask],
+                    size: 1 << bits
+                };
 
-        let mut bits = u32::BITS - span.leading_zeros();
-
-        while bits < u32::BITS {
-            let mask = i32::MAX << bits;
-            let size = 1 << bits;
-
-            let anchor = point![start.x & mask, start.y & mask];
-
-            // Correct exact bound case
-            let overflow = max(
-                end.x.abs_diff(anchor.x),
-                end.y.abs_diff(anchor.y)
-            );
-
-            if overflow >= size {
-                bits += 1;
-            } else {
-                return Area { anchor, size };
+                // Correct exact bound case
+                if area.holds(&end) {
+                    return area;
+                } else {
+                    bits += 1;
+                }
             }
         }
 
@@ -116,11 +105,11 @@ impl<D: Division> Holds<D> for Area {
         if object.size() > self.size {
             false
         } else {
-            let left = self.size.abs_diff(object.size());
+            let left = self.size - object.size();
 
             self.anchor.iter()
                 .zip(object.anchor().iter())
-                .all(|(a, o)| a <= o && o.abs_diff(*a) <= left)
+                .all(|(a, o)| (a ^ o) as u32 <= left)
         }
     }
 }
@@ -261,6 +250,35 @@ mod tests {
             assert!(area.holds(&point![3, 2]));
             assert!(area.holds(&point![2, 3]));
             assert!(area.holds(&point![3, 3]));
+        }
+
+        #[test]
+        fn test_area_holds_point_negative() {
+            let area = Area {
+                anchor: point![-4, -4],
+                size: 2
+            };
+
+            // Far outside
+            assert!(!area.holds(&point![-5, -5])); // below left
+            assert!(!area.holds(&point![-3, -5])); // left
+            assert!(!area.holds(&point![-1, -5])); // over left
+            assert!(!area.holds(&point![-5, -3])); // below
+            assert!(!area.holds(&point![-1, -3])); // over
+            assert!(!area.holds(&point![-5, -1])); // below right
+            assert!(!area.holds(&point![-3, -1])); // right
+            assert!(!area.holds(&point![-1, -1])); // over right
+
+            // Border outside
+            assert!(!area.holds(&point![-4, -2]));
+            assert!(!area.holds(&point![-2, -2]));
+            assert!(!area.holds(&point![-2, -4]));
+
+            // Inside
+            assert!(area.holds(&point![-4, -4]));
+            assert!(area.holds(&point![-3, -4]));
+            assert!(area.holds(&point![-4, -3]));
+            assert!(area.holds(&point![-3, -3]));
         }
 
         #[test]
