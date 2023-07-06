@@ -4,15 +4,29 @@ use py::Walkable;
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
-use crate::binary_tree::BinaryTree;
-use crate::quadtree::Quadtree;
 use crate::universe_style::UniverseStyle;
 
+#[cfg(feature = "binary-tree")]
+use crate::binary_tree::BinaryTree;
+
+#[cfg(feature = "quadtree")]
+use crate::quadtree::Quadtree;
+
 /// Life universe
+#[cfg(feature = "binary-tree")]
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    // cells: BinaryTree,
+    cells: BinaryTree,
+    size: Vector2<usize>,
+    style: UniverseStyle,
+}
+
+/// Life universe
+#[cfg(feature = "quadtree")]
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Universe {
     cells: Quadtree,
     size: Vector2<usize>,
     style: UniverseStyle,
@@ -21,9 +35,18 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     /// Builds a dead universe
+    #[cfg(feature = "binary-tree")]
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
-            // cells: BinaryTree::new(),
+            cells: BinaryTree::new(),
+            size: vector![width, height],
+            style: UniverseStyle::default(),
+        }
+    }
+
+    #[cfg(feature = "quadtree")]
+    pub fn dead(width: usize, height: usize) -> Universe {
+        Universe {
             cells: Quadtree::new(),
             size: vector![width, height],
             style: UniverseStyle::default(),
@@ -142,16 +165,19 @@ impl Universe {
     }
 
     /// Count alive neighbors of given point
+    #[cfg(feature = "binary-tree")]
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
 
-        // self.cells.search(area)
-        //     .iter()
-        //     .filter(|&pt| pt != point)
-        //     .count()
-        // self.cells.query(area)
-        //     .filter(|&pt| pt != point)
-        //     .count()
+        self.cells.query(area)
+            .filter(|&pt| pt != point)
+            .count()
+    }
+
+    #[cfg(feature = "quadtree")]
+    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
+        let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
+
         area.walk().unwrap()
             .iter()
             .filter(|pt| pt != point && self.cells.has(pt))

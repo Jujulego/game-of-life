@@ -9,7 +9,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [features]
-default = ["console_error_panic_hook"]
+default = ["console_error_panic_hook", "quadtree"]
+binary-tree = []
+quadtree = []
 
 [dependencies]
 console_error_panic_hook = { version = "0.1.7", optional = true }

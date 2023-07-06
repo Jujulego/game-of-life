@@ -182,7 +182,7 @@ mod tests {
             }
         );
 
-        // Move the middle node
+        // Move the middle node deeper
         tree.insert(point![3, 5]);
 
         assert_eq!(
