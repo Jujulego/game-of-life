@@ -1,4 +1,5 @@
 use na::Point2;
+use py::Walkable;
 use crate::quadtree::area::Area;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
@@ -22,6 +23,12 @@ impl Quadtree {
     pub fn new() -> Quadtree {
         Quadtree {
             root: Node::new(Area::global())
+        }
+    }
+
+    pub fn inside<B: Walkable<i32, 2>>(bbox: &B) -> Quadtree {
+        Quadtree {
+            root: Node::new(Area::surrounding(bbox))
         }
     }
 
@@ -73,7 +80,7 @@ mod tests {
     #[test]
     fn test_has_point() {
         // Initiate tree
-        let mut tree = Quadtree::new();
+        let mut tree = Quadtree::default();
         tree.insert(point![3, 1]);
         tree.insert(point![3, 3]);
         tree.insert(point![3, 5]);
@@ -91,7 +98,7 @@ mod tests {
     #[test]
     fn test_iterator() {
         // Initiate tree
-        let mut tree = Quadtree::new();
+        let mut tree = Quadtree::default();
         tree.insert(point![3, 1]);
         tree.insert(point![3, 3]);
         tree.insert(point![3, 5]);
@@ -108,7 +115,7 @@ mod tests {
     #[test]
     fn test_insert_point() {
         // Initiate tree
-        let mut tree = Quadtree::new();
+        let mut tree = Quadtree::default();
 
         assert_eq!(
             tree.root,
@@ -218,7 +225,7 @@ mod tests {
     #[test]
     fn test_remove_point() {
         // Initiate tree
-        let mut tree = Quadtree::new();
+        let mut tree = Quadtree::default();
         tree.insert(point![3, 1]);
         tree.insert(point![3, 3]);
         tree.insert(point![1, 3]);

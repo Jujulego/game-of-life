@@ -1,6 +1,6 @@
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
-use py::Walkable;
+use py::{BBox, Walkable};
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
@@ -44,11 +44,15 @@ impl Universe {
         }
     }
 
+    /// Builds a dead universe
     #[cfg(feature = "quadtree")]
     pub fn dead(width: usize, height: usize) -> Universe {
+        let size = vector![width, height];
+        let bbox = BBox::from_anchor_size(&Point2::origin(), &size.cast());
+
         Universe {
-            cells: Quadtree::new(),
-            size: vector![width, height],
+            cells: Quadtree::inside(&bbox),
+            size,
             style: UniverseStyle::default(),
         }
     }

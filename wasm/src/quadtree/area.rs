@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 use na::{point, Point2};
-use py::Holds;
+use py::{Holds, Walkable};
 use crate::quadtree::division::Division;
 use crate::quadtree::quarter::{quarter, Quarter};
 
@@ -20,43 +20,70 @@ impl Area {
         }
     }
 
+    fn search_area(start: &Point2<i32>, end: &Point2<i32>, mut bits: u32) -> Area {
+        while bits < u32::BITS {
+            let mask = (u32::MAX << bits) as i32;
+
+            let area = Area {
+                anchor: point![start.x & mask, start.y & mask],
+                size: 1 << bits
+            };
+
+            // Correct exact bound case
+            if area.holds(end) {
+                return area;
+            } else {
+                bits += 1;
+            }
+        }
+
+        Area::global()
+    }
+
+    /// Returns area surrounding given bbox
+    pub fn surrounding<B: Walkable<i32, 2>>(bbox: &B) -> Area {
+        let start = bbox.first_point();
+        let end = bbox.last_point();
+
+        match (&start, &end) {
+            (Some(start), Some(end)) => {
+                if quarter(&Point2::origin(), start) == quarter(&Point2::origin(), end) {
+                    let size = end - start;
+                    let bits = u32::BITS - max(size.x.abs(), size.y.abs()).leading_zeros();
+
+                    Area::search_area(start, end, bits)
+                } else {
+                    Area::global()
+                }
+            },
+            _ => Area::global()
+        }
+
+    }
+
     /// Returns smallest area containing given division and point
     pub fn common<A: Division, B: Division>(a: &A, b: &B) -> Area {
         // Checks global quarters
         let global_quarter = quarter(&Point2::origin(), a.anchor());
 
-        if global_quarter == quarter(&Point2::origin(), b.anchor()) {
-            // Extreme points
-            let start = point![
-                min(a.anchor().x, b.anchor().x),
-                min(a.anchor().y, b.anchor().y)
-            ];
-            let end = point![
-                max(a.anchor().x, b.anchor().x),
-                max(a.anchor().y, b.anchor().y)
-            ];
-
-            // Compute common area
-            let mut bits = max(a.size(), b.size()).trailing_zeros() + 1;
-
-            while bits < u32::BITS {
-                let mask = (u32::MAX << bits) as i32;
-
-                let area = Area {
-                    anchor: point![start.x & mask, start.y & mask],
-                    size: 1 << bits
-                };
-
-                // Correct exact bound case
-                if area.holds(&end) {
-                    return area;
-                } else {
-                    bits += 1;
-                }
-            }
+        if global_quarter != quarter(&Point2::origin(), b.anchor()) {
+            return Area::global()
         }
 
-        Area::global()
+        // Extreme points
+        let start = point![
+            min(a.anchor().x, b.anchor().x),
+            min(a.anchor().y, b.anchor().y)
+        ];
+        let end = point![
+            max(a.anchor().x, b.anchor().x),
+            max(a.anchor().y, b.anchor().y)
+        ];
+
+        // Compute common area
+        let bits = max(a.size(), b.size()).trailing_zeros() + 1;
+
+        Area::search_area(&start, &end, bits)
     }
 
     fn center(&self) -> Point2<i32> {
@@ -72,18 +99,9 @@ impl Area {
         }
     }
 
+    #[inline]
     pub fn quarter(&self, point: &Point2<i32>) -> Quarter {
-        let center = self.center();
-
-        if point.x < center.x && point.y < center.y {
-            Quarter::SouthWest
-        } else if point.x < center.x {
-            Quarter::NorthWest
-        } else if point.y < center.y {
-            Quarter::SouthEast
-        } else {
-            Quarter::NorthEast
-        }
+        quarter(&self.center(), point)
     }
 }
 
@@ -135,6 +153,22 @@ mod tests {
         assert_eq!(area.quarter(&point![3, 1]), Quarter::SouthEast);
         assert_eq!(area.quarter(&point![1, 3]), Quarter::NorthWest);
         assert_eq!(area.quarter(&point![1, 1]), Quarter::SouthWest);
+    }
+
+    #[test]
+    fn test_surrounding() {
+        assert_eq!(
+            Area::surrounding(&(point![1, 1]..=point![5, 5])),
+            Area { anchor: point![0, 0], size: 8 }
+        );
+        assert_eq!(
+            Area::surrounding(&(point![-5, -5]..=point![-1, -1])),
+            Area { anchor: point![-8, -8], size: 8 }
+        );
+        assert_eq!(
+            Area::surrounding(&(point![-5, -5]..=point![1, 1])),
+            Area::global()
+        );
     }
 
     mod common {
