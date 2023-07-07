@@ -21,16 +21,42 @@ impl Node {
         }
     }
 
+    /// Test if node contains point
     pub fn has(&self, point: &Point2<i32>) -> bool {
         let idx = self.area.quarter(point) as usize;
 
-        match &self.children[idx] {
+        match unsafe { self.children.get_unchecked(idx) } {
             Tree::Empty => false,
             Tree::Leaf(pt) => point == pt,
             Tree::Node(child) => child.area.holds(point) && child.has(point),
         }
     }
 
+    /// Search greatest node matching area
+    pub fn search(&self, area: &Area) -> Option<&Tree> {
+        let idx = self.area.quarter(area.anchor()) as usize;
+        let tree = &self.children[idx];
+
+        match tree {
+            Tree::Empty => None,
+            Tree::Leaf(pt) => {
+                if area.holds(pt) {
+                    Some(tree)
+                } else {
+                    None
+                }
+            },
+            Tree::Node(child) => {
+                if area.holds(&child.area) {
+                    Some(tree)
+                } else {
+                    child.search(area)
+                }
+            },
+        }
+    }
+
+    /// Insert new element in node
     pub fn insert<A: Division>(&mut self, element: Tree, at: &A) {
         let idx = self.area.quarter(at.anchor()) as usize;
         let pos = unsafe { self.children.get_unchecked_mut(idx) };
@@ -61,6 +87,7 @@ impl Node {
         }
     }
 
+    /// Removes point from node
     pub fn remove(&mut self, point: &Point2<i32>) {
         let idx = self.area.quarter(point) as usize;
         let pos = unsafe { self.children.get_unchecked_mut(idx) };

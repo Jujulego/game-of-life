@@ -1,8 +1,10 @@
 use std::cmp::{max, min};
+use std::ops::{Range, RangeInclusive};
 use na::{point, Point2};
-use py::{Holds, Walkable};
+use py::{BBox, Holds, Intersection, Walkable};
 use crate::quadtree::division::Division;
 use crate::quadtree::quarter::{quarter, Quarter};
+use crate::traits::overlap::Overlaps;
 
 /// An area in the quadtree
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -49,7 +51,7 @@ impl Area {
             (Some(start), Some(end)) => {
                 if quarter(&Point2::origin(), start) == quarter(&Point2::origin(), end) {
                     let size = end - start;
-                    let bits = u32::BITS - max(size.x.abs(), size.y.abs()).leading_zeros();
+                    let bits = u32::BITS - max(size.x.unsigned_abs(), size.y.unsigned_abs()).leading_zeros();
 
                     Area::search_area(start, end, bits)
                 } else {
@@ -132,6 +134,41 @@ impl<D: Division> Holds<D> for Area {
     }
 }
 
+impl Intersection<Area> for Range<Point2<i32>> {
+    type Output = Range<Point2<i32>>;
+
+    fn intersection(&self, lhs: &Area) -> Self::Output {
+        self.intersection(&Range::from(lhs))
+    }
+}
+
+impl Intersection<Area> for RangeInclusive<Point2<i32>> {
+    type Output = BBox<i32, 2>;
+
+    fn intersection(&self, lhs: &Area) -> Self::Output {
+        self.intersection(&Range::from(lhs))
+    }
+}
+
+impl Overlaps<Area> for Range<Point2<i32>> {
+    fn overlap(&self, lhs: &Area) -> bool {
+        if lhs.size == u32::MAX {
+            true
+        } else {
+            let size = lhs.size as i32;
+
+            self.start.x < (lhs.anchor.x + size) && self.start.y < (lhs.anchor.y + size) && self.end.x >= lhs.anchor.x && self.end.y >= lhs.anchor.y
+        }
+    }
+}
+
+// Conversions
+impl From<&Area> for Range<Point2<i32>> {
+    fn from(value: &Area) -> Self {
+        value.anchor..Point2::new(value.anchor.x + value.size as i32, value.anchor.y + value.size as i32)
+    }
+}
+
 // Tests
 #[cfg(test)]
 mod tests {
@@ -158,16 +195,40 @@ mod tests {
     #[test]
     fn test_surrounding() {
         assert_eq!(
-            Area::surrounding(&(point![1, 1]..=point![5, 5])),
-            Area { anchor: point![0, 0], size: 8 }
+            Area::surrounding(&(point![1, 1]..=point![3, 3])),
+            Area { anchor: point![0, 0], size: 4 }
         );
         assert_eq!(
-            Area::surrounding(&(point![-5, -5]..=point![-1, -1])),
-            Area { anchor: point![-8, -8], size: 8 }
+            Area::surrounding(&(point![5, 1]..=point![7, 3])),
+            Area { anchor: point![4, 0], size: 4 }
         );
         assert_eq!(
-            Area::surrounding(&(point![-5, -5]..=point![1, 1])),
+            Area::surrounding(&(point![1, 5]..=point![3, 7])),
+            Area { anchor: point![0, 4], size: 4 }
+        );
+        assert_eq!(
+            Area::surrounding(&(point![-1, -1]..=point![1, 1])),
             Area::global()
+        );
+    }
+
+    #[test]
+    fn test_intersection() {
+        assert_eq!(
+            (point![0, 0]..point![3, 3]).intersection(&Area { anchor: point![2, 2], size: 2 }),
+            point![2, 2]..point![3, 3]
+        );
+        assert_eq!(
+            (point![0, 3]..point![3, 5]).intersection(&Area { anchor: point![2, 2], size: 2 }),
+            point![2, 3]..point![3, 4]
+        );
+        assert_eq!(
+            (point![3, 0]..point![5, 3]).intersection(&Area { anchor: point![2, 2], size: 2 }),
+            point![3, 2]..point![4, 3]
+        );
+        assert_eq!(
+            (point![3, 3]..point![5, 5]).intersection(&Area { anchor: point![2, 2], size: 2 }),
+            point![3, 3]..point![4, 4]
         );
     }
 

@@ -1,9 +1,14 @@
+use std::fmt::Debug;
 use na::Point2;
-use py::Walkable;
+use py::{BBox, Holds, Intersection, Walkable};
+use wasm_bindgen::JsValue;
+use web_sys::console;
 use crate::quadtree::area::Area;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
+use crate::quadtree::query::Query;
 use crate::quadtree::tree::Tree;
+use crate::traits::overlap::Overlaps;
 
 mod area;
 mod division;
@@ -11,6 +16,7 @@ mod iter;
 mod node;
 mod point;
 mod quarter;
+mod query;
 mod tree;
 
 /// Quadtree wrapper
@@ -34,7 +40,12 @@ impl Quadtree {
 
     #[inline]
     pub fn has(&self, point: &Point2<i32>) -> bool {
-        self.root.has(point)
+        self.root.area.holds(point) && self.root.has(point)
+    }
+
+    pub fn query<R: Holds<Point2<i32>> + Overlaps<Area>, B: Intersection<Area, Output=R>>(&self, bbox_a: B) -> Query<R> {
+        let bbox = bbox_a.intersection(&self.root.area);
+        Query::new(bbox, &self.root)
     }
 
     #[inline]
@@ -43,13 +54,20 @@ impl Quadtree {
     }
 
     #[inline]
-    pub fn insert(&mut self, point: Point2<i32>) {
-        self.root.insert(Tree::Leaf(point), &point);
+    pub fn insert(&mut self, point: Point2<i32>) -> Result<(), String> {
+        if self.root.area.holds(&point) {
+            self.root.insert(Tree::Leaf(point), &point);
+            Ok(())
+        } else {
+            Err(format!("Cannot insert point {point}, it is outside of root node"))
+        }
     }
 
     #[inline]
     pub fn remove(&mut self, point: &Point2<i32>) {
-        self.root.remove(point);
+        if self.root.area.holds(point) {
+            self.root.remove(point);
+        }
     }
 }
 

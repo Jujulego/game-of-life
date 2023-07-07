@@ -160,7 +160,7 @@ impl Universe {
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
-        self.cells.insert(point);
+        self.cells.insert(point).unwrap();
     }
 
     /// Set cell at given point dead
@@ -180,11 +180,15 @@ impl Universe {
 
     #[cfg(feature = "quadtree")]
     fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
-        let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
+        let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
 
-        area.walk().unwrap()
-            .iter()
-            .filter(|pt| pt != point && self.cells.has(pt))
+        self.cells.query(area)
+            .filter(|&pt| pt != point)
             .count()
+
+        // area.walk().unwrap()
+        //     .iter()
+        //     .filter(|pt| pt != point && self.cells.has(pt))
+        //     .count()
     }
 }
