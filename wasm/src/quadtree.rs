@@ -54,12 +54,11 @@ impl Quadtree {
     }
 
     #[inline]
-    pub fn insert(&mut self, point: Point2<i32>) -> Result<(), String> {
+    pub fn insert(&mut self, point: Point2<i32>) {
         if self.root.area.holds(&point) {
             self.root.insert(Tree::Leaf(point), &point);
-            Ok(())
         } else {
-            Err(format!("Cannot insert point {point}, it is outside of root node"))
+            panic!("Cannot insert point {point}, it is outside of root node");
         }
     }
 

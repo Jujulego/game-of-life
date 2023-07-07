@@ -160,7 +160,7 @@ impl Universe {
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
-        self.cells.insert(point).unwrap();
+        self.cells.insert(point);
     }
 
     /// Set cell at given point dead
@@ -185,10 +185,5 @@ impl Universe {
         self.cells.query(area)
             .filter(|&pt| pt != point)
             .count()
-
-        // area.walk().unwrap()
-        //     .iter()
-        //     .filter(|pt| pt != point && self.cells.has(pt))
-        //     .count()
     }
 }
