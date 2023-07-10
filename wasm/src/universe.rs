@@ -143,6 +143,20 @@ impl Universe {
         }
     }
 
+    pub fn redraw(&self, ctx: &CanvasRenderingContext2d, width: i32, height: i32) {
+        ctx.set_fill_style(self.style.dead_color());
+        ctx.fill_rect(0.0, 0.0, width as f64, height as f64);
+
+        let area = Point2::origin()..point![width, height];
+
+        for cell in self.cells.query(area) {
+            let pos = cell.cast::<f64>() * 5.0;
+
+            ctx.set_fill_style(self.style.alive_color());
+            ctx.fill_rect(pos.x, pos.y, 5.0, 5.0);
+        }
+    }
+
     #[wasm_bindgen(getter)]
     pub fn style(&self) -> UniverseStyle {
         self.style.clone()
