@@ -1,8 +1,10 @@
 use std::slice::Iter;
 use na::Point2;
 use py::{Holds, Walkable};
-use crate::binary_query::BinaryQuery;
 use crate::utils::cmp_xy_order;
+
+#[cfg(feature = "binary-tree")]
+use crate::binary_query::BinaryQuery;
 
 /// Quadtree
 #[derive(Clone)]
@@ -32,6 +34,7 @@ impl BinaryTree {
     }
 
     /// Returns all elements inside the given area
+    #[cfg(feature = "binary-tree")]
     pub fn query<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> BinaryQuery<'_, B> {
         BinaryQuery::new(area, self.elements.as_slice())
     }

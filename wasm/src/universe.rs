@@ -1,13 +1,13 @@
+use std::cmp::{max, min};
+use std::mem;
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
-use py::BBox;
+use py::{BBox, Walkable};
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
-use crate::universe_style::UniverseStyle;
-
-#[cfg(feature = "binary-tree")]
 use crate::binary_tree::BinaryTree;
+use crate::universe_style::UniverseStyle;
 
 #[cfg(feature = "quadtree")]
 use crate::quadtree::Quadtree;
@@ -18,6 +18,7 @@ use crate::quadtree::Quadtree;
 #[wasm_bindgen]
 pub struct Universe {
     cells: BinaryTree,
+    updates: BinaryTree,
     size: Vector2<usize>,
     style: UniverseStyle,
 }
@@ -28,6 +29,7 @@ pub struct Universe {
 #[wasm_bindgen]
 pub struct Universe {
     cells: Quadtree,
+    updates: BinaryTree,
     size: Vector2<usize>,
     style: UniverseStyle,
 }
@@ -39,6 +41,7 @@ impl Universe {
     pub fn dead(width: usize, height: usize) -> Universe {
         Universe {
             cells: BinaryTree::new(),
+            updates: BinaryTree::new(),
             size: vector![width, height],
             style: UniverseStyle::default(),
         }
@@ -52,6 +55,7 @@ impl Universe {
 
         Universe {
             cells: Quadtree::inside(&bbox),
+            updates: BinaryTree::new(),
             size,
             style: UniverseStyle::default(),
         }
@@ -93,21 +97,22 @@ impl Universe {
 
     /// Compute next state
     pub fn tick(&mut self) {
-        let old = self.clone();
+        let old = Universe {
+            cells: self.cells.clone(),
+            updates: mem::replace(&mut self.updates, BinaryTree::new()),
+            size: self.size,
+            style: self.style.clone(),
+        };
 
-        for row in 0..self.size.y as i32 {
-            for col in 0..self.size.x as i32 {
-                let point = point![col, row];
+        for &cell in old.updates.iter() {
+            let (is_alive, neighbors) = old.cell_state(&cell);
 
-                let (is_alive, neighbors) = old.cell_state(&point);
-
-                if is_alive {
-                    if !(2..=3).contains(&neighbors) {
-                        self.set_dead(point);
-                    }
-                } else if neighbors == 3 {
-                    self.set_alive(point);
+            if is_alive {
+                if !(2..=3).contains(&neighbors) {
+                    self.set_dead(cell);
                 }
+            } else if neighbors == 3 {
+                self.set_alive(cell);
             }
         }
     }
@@ -152,22 +157,28 @@ impl Universe {
 }
 
 impl Universe {
-    /// Check if cell at given point is alive
-    fn is_alive(&self, point: &Point2<i32>) -> bool {
-        self.cells.has(point)
+    /// Register cells to update
+    fn register(&mut self, point: &Point2<i32>) {
+        let area = point![max(point.x - 1, 0), max(point.y - 1, 0)]..=point![min(point.x + 1, self.size.x as i32 - 1), min(point.y + 1, self.size.y as i32 - 1)];
+
+        area.walk().unwrap().iter()
+            .filter(|pt| pt != point)
+            .for_each(|pt| self.updates.insert(pt));
     }
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
+        self.register(&point);
         self.cells.insert(point);
     }
 
     /// Set cell at given point dead
     fn set_dead(&mut self, point: Point2<i32>) {
+        self.register(&point);
         self.cells.remove(&point);
     }
 
-    /// Count alive neighbors of given point
+    /// Get cell state and neighbor count
     #[cfg(feature = "binary-tree")]
     fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
@@ -185,6 +196,7 @@ impl Universe {
         (is_alive, neighbors)
     }
 
+    /// Get cell state and neighbor count
     #[cfg(feature = "quadtree")]
     fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
