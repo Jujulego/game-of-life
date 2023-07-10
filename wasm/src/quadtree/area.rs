@@ -122,7 +122,9 @@ impl Division for Area {
 
 impl<D: Division> Holds<D> for Area {
     fn holds(&self, object: &D) -> bool {
-        if object.size() > self.size {
+        if self.size == u32::MAX {
+            true
+        } else if object.size() > self.size {
             false
         } else {
             let left = self.size - object.size();
@@ -138,7 +140,11 @@ impl Intersection<Area> for Range<Point2<i32>> {
     type Output = Range<Point2<i32>>;
 
     fn intersection(&self, lhs: &Area) -> Self::Output {
-        self.intersection(&Range::from(lhs))
+        if lhs.size == u32::MAX {
+            self.clone()
+        } else {
+            self.intersection(&Range::from(lhs))
+        }
     }
 }
 
@@ -146,7 +152,11 @@ impl Intersection<Area> for RangeInclusive<Point2<i32>> {
     type Output = BBox<i32, 2>;
 
     fn intersection(&self, lhs: &Area) -> Self::Output {
-        self.intersection(&Range::from(lhs))
+        if lhs.size == u32::MAX {
+            BBox::from(self.clone())
+        } else {
+            self.intersection(&Range::from(lhs))
+        }
     }
 }
 

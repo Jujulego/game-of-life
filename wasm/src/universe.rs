@@ -1,11 +1,10 @@
 use std::cmp::{max, min};
 use std::mem;
 use js_sys::Math;
-use na::{distance, point, Point2, vector, Vector2};
+use na::{distance, point, Point2, vector};
 use py::{BBox, Walkable};
-use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
-use web_sys::CanvasRenderingContext2d;
+use web_sys::{CanvasRenderingContext2d, console};
 use crate::binary_tree::BinaryTree;
 use crate::universe_style::UniverseStyle;
 
@@ -30,7 +29,6 @@ pub struct Universe {
 pub struct Universe {
     cells: Quadtree,
     updates: BinaryTree,
-    size: Vector2<usize>,
     style: UniverseStyle,
 }
 
@@ -49,25 +47,23 @@ impl Universe {
 
     /// Builds a dead universe
     #[cfg(feature = "quadtree")]
-    pub fn dead(width: usize, height: usize) -> Universe {
-        let size = vector![width, height];
-        let bbox = BBox::from_anchor_size(&Point2::origin(), &size.cast());
+    pub fn dead(width: i32, height: i32) -> Universe {
+        let bbox = BBox::from_anchor_size(&Point2::origin(), &vector![width, height]);
 
         Universe {
-            cells: Quadtree::inside(&bbox),
+            cells: Quadtree::new(),
             updates: BinaryTree::new(),
-            size,
             style: UniverseStyle::default(),
         }
     }
 
     /// Builds a fixed universe
-    pub fn fixed(width: usize, height: usize) -> Universe {
+    pub fn fixed(width: i32, height: i32) -> Universe {
         let mut universe = Universe::dead(width, height);
 
-        for row in 0..universe.size.y as i32 {
-            for col in 0..universe.size.x as i32 {
-                let i = row * (universe.size.x as i32) + col;
+        for row in 0..height {
+            for col in 0..width {
+                let i = row * width + col;
 
                 if i % 2 == 0 || i % 7 == 0 || i % 13 == 0 {
                     universe.set_alive(point![col, row])
@@ -79,11 +75,11 @@ impl Universe {
     }
 
     /// Builds a random universe
-    pub fn random(width: usize, height: usize) -> Universe {
+    pub fn random(width: i32, height: i32) -> Universe {
         let mut universe = Universe::dead(width, height);
 
-        for row in 0..universe.size.y as i32 {
-            for col in 0..universe.size.x as i32 {
+        for row in 0..height {
+            for col in 0..width {
                 let rand = Math::random();
 
                 if rand < 0.5 {
@@ -96,27 +92,31 @@ impl Universe {
     }
 
     /// Inserts some cells around given position
-    pub fn insert_around(&mut self, cx: i32, cy: i32, r: i32) {
+    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, cx: i32, cy: i32, r: i32) {
         let center = point![cx, cy];
-        let area = point![max(cx - r, 0), max(cy - r, 0)]..=point![min(cx + r, self.size.x as i32 - 1), min(cy + r, self.size.y as i32 - 1)];
+        let area = point![cx - r, cy - r]..=point![cx + r, cy + r];
 
         area.walk().unwrap().iter()
-            .filter(|pt| distance::<f32, 2>(&center.cast(), &pt.cast()) <= r as f32)
-            .for_each(|pt| {
+            .filter(|cell| distance::<f32, 2>(&center.cast(), &cell.cast()) <= r as f32)
+            .for_each(|cell| {
                 let rand = Math::random();
 
                 if rand < 0.25 {
-                    self.set_alive(pt)
+                    self.set_alive(cell);
+
+                    let pos = cell.cast::<f64>() * 5.0;
+
+                    ctx.set_fill_style(self.style.alive_color());
+                    ctx.fill_rect(pos.x, pos.y, 5.0, 5.0);
                 }
             });
     }
 
     /// Compute next state
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, ctx: &CanvasRenderingContext2d) {
         let old = Universe {
             cells: self.cells.clone(),
             updates: mem::replace(&mut self.updates, BinaryTree::new()),
-            size: self.size,
             style: self.style.clone(),
         };
 
@@ -126,39 +126,21 @@ impl Universe {
             if is_alive {
                 if !(2..=3).contains(&neighbors) {
                     self.set_dead(cell);
+
+                    let pos = cell.cast::<f64>() * 5.0;
+
+                    ctx.set_fill_style(self.style.dead_color());
+                    ctx.fill_rect(pos.x, pos.y, 5.0, 5.0);
                 }
             } else if neighbors == 3 {
                 self.set_alive(cell);
+
+                let pos = cell.cast::<f64>() * 5.0;
+
+                ctx.set_fill_style(self.style.alive_color());
+                ctx.fill_rect(pos.x, pos.y, 5.0, 5.0);
             }
         }
-    }
-
-    /// Render universe inside canvas
-    pub fn render(&self, ctx: &CanvasRenderingContext2d) {
-        let size = self.size.cast() * self.style.cell_size();
-
-        ctx.begin_path();
-
-        ctx.set_fill_style(self.style.dead_color());
-        ctx.fill_rect(0.0, 0.0, size.x, size.y);
-
-        ctx.set_fill_style(self.style.alive_color());
-
-        for cell in self.cells.iter() {
-            let pos = cell.cast() * self.style.cell_size();
-
-            ctx.fill_rect(
-                pos[0], pos[1],
-                self.style.cell_size(), self.style.cell_size()
-            );
-        }
-
-        ctx.stroke();
-    }
-
-    #[wasm_bindgen(getter)]
-    pub fn size(&self) -> Vector2D {
-        Vector2D::from(self.size.cast())
     }
 
     #[wasm_bindgen(getter)]
@@ -175,7 +157,7 @@ impl Universe {
 impl Universe {
     /// Register cells to update
     fn register(&mut self, point: &Point2<i32>) {
-        let area = point![max(point.x - 1, 0), max(point.y - 1, 0)]..=point![min(point.x + 1, self.size.x as i32 - 1), min(point.y + 1, self.size.y as i32 - 1)];
+        let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
 
         area.walk().unwrap().iter()
             .filter(|pt| pt != point)
@@ -184,8 +166,8 @@ impl Universe {
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
-        self.register(&point);
         self.cells.insert(point);
+        self.register(&point);
     }
 
     /// Set cell at given point dead

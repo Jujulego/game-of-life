@@ -4,9 +4,7 @@ import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useWasmModule } from '@/hooks/useWasmModule';
 
 // Constants
-const CELL_SIZE = 5;
 const TICK_RATE = 100;
-const FRAME_RATE = 25;
 
 // Component
 export default function Universe() {
@@ -14,6 +12,7 @@ export default function Universe() {
 
   // State
   const [universe] = useState(() => Universe.dead(256, 128));
+  const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
   // Refs
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -22,33 +21,34 @@ export default function Universe() {
   useEffect(() => {
     if (!canvas.current) return;
 
-    // Setup canvas
-    const size = universe.size;
+    // Initiate context
+    setContext(canvas.current.getContext('2d')!);
+  }, []);
 
-    canvas.current.width = size.dx * CELL_SIZE;
-    canvas.current.height = size.dy * CELL_SIZE;
+  useEffect(() => {
+    if (!context || !canvas.current) return;
 
     // Setup universe
     universe.style = UniverseStyle.dark();
 
-    // Animate !
-    const ctx = canvas.current.getContext('2d')!;
+    context.fillStyle = universe.style.dead_color;
+    context.fillRect(0, 0, canvas.current.width, canvas.current.height);
 
+    // Animate !
     let frame: number;
     let lastTick = 0;
-    let lastFrame = 0;
 
     function tick(time: DOMHighResTimeStamp) {
       // Update state
-      if (time - lastTick > TICK_RATE) {
+      if (context && time - lastTick > TICK_RATE) {
         lastTick = time;
-        universe.tick();
-      }
 
-      // Render state
-      if (time - lastFrame > FRAME_RATE) {
-        lastFrame = time;
-        universe.render(ctx);
+        performance.mark("tick-start");
+
+        universe.tick(context);
+
+        performance.mark("tick-end");
+        performance.measure("tick", "tick-start", "tick-end");
       }
 
       frame = requestAnimationFrame(tick);
@@ -57,7 +57,7 @@ export default function Universe() {
     frame = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(frame);
-  }, [universe]);
+  }, [context, universe]);
 
   // Callbacks
   const last = useRef(0);
@@ -65,11 +65,11 @@ export default function Universe() {
   const handleMove = useCallback((event: MouseEvent<HTMLCanvasElement>) => {
     const now = performance.now();
 
-    if (now - last.current > 10) {
-      universe.insert_around(event.clientX / 5, event.clientY / 5, 3);
+    if (context && now - last.current > 10) {
+      universe.insert_around(context, event.clientX / 5, event.clientY / 5, 3);
       last.current = now;
     }
-  }, [universe]);
+  }, [context, universe]);
 
   // Render
   return <canvas ref={canvas} onMouseMove={handleMove} />
