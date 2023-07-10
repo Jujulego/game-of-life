@@ -1,10 +1,10 @@
-use std::cmp::{max, min};
 use std::mem;
 use js_sys::Math;
 use na::{distance, point, Point2, vector};
-use py::{BBox, Walkable};
+use py::{BBox, Holds, PointBounds, Walkable};
+use py::wasm::Point2D;
 use wasm_bindgen::prelude::*;
-use web_sys::{CanvasRenderingContext2d, console};
+use web_sys::CanvasRenderingContext2d;
 use crate::binary_tree::BinaryTree;
 use crate::universe_style::UniverseStyle;
 
@@ -28,8 +28,9 @@ pub struct Universe {
 #[wasm_bindgen]
 pub struct Universe {
     cells: Quadtree,
-    updates: BinaryTree,
     style: UniverseStyle,
+    updates: BinaryTree,
+    update_area: BBox<i32, 2>,
 }
 
 #[wasm_bindgen]
@@ -52,8 +53,9 @@ impl Universe {
 
         Universe {
             cells: Quadtree::new(),
-            updates: BinaryTree::new(),
             style: UniverseStyle::default(),
+            updates: BinaryTree::new(),
+            update_area: BBox::default(),
         }
     }
 
@@ -92,12 +94,12 @@ impl Universe {
     }
 
     /// Inserts some cells around given position
-    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, cx: i32, cy: i32, r: i32) {
-        let center = point![cx, cy];
-        let area = point![cx - r, cy - r]..=point![cx + r, cy + r];
+    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, center: &Point2D, r: i32) {
+        let center = center.as_ref();
+        let area = point![center.x as i32 - r, center.y as i32 - r]..=point![center.x as i32 + r, center.y as i32 + r];
 
         area.walk().unwrap().iter()
-            .filter(|cell| distance::<f32, 2>(&center.cast(), &cell.cast()) <= r as f32)
+            .filter(|cell| distance(center, &cell.cast()) <= r as f64)
             .for_each(|cell| {
                 let rand = Math::random();
 
@@ -116,11 +118,16 @@ impl Universe {
     pub fn tick(&mut self, ctx: &CanvasRenderingContext2d) {
         let old = Universe {
             cells: self.cells.clone(),
-            updates: mem::replace(&mut self.updates, BinaryTree::new()),
             style: self.style.clone(),
+            updates: mem::replace(&mut self.updates, BinaryTree::new()),
+            update_area: BBox::default(),
         };
 
         for &cell in old.updates.iter() {
+            if !self.update_area.holds(&cell) {
+                continue
+            }
+
             let (is_alive, neighbors) = old.cell_state(&cell);
 
             if is_alive {
@@ -157,6 +164,23 @@ impl Universe {
         }
     }
 
+    pub fn set_update_area(&mut self, start: &Point2D, end: &Point2D) {
+        let start = point![start.x() as i32, start.y() as i32];
+        let end = point![end.x() as i32, end.y() as i32];
+
+        let old = mem::replace(&mut self.update_area, BBox::from_points(&start, &end));
+
+        if let Some(old) = old.end_point() {
+            for cell in &(point![start.x, old.y]..=end).walk().unwrap() {
+                self.updates.insert(cell);
+            }
+
+            for cell in &(point![old.x, start.y]..=point![end.x, old.y]).walk().unwrap() {
+                self.updates.insert(cell);
+            }
+        }
+    }
+
     #[wasm_bindgen(getter)]
     pub fn style(&self) -> UniverseStyle {
         self.style.clone()
@@ -170,23 +194,22 @@ impl Universe {
 
 impl Universe {
     /// Register cells to update
-    fn register(&mut self, point: &Point2<i32>) {
+    fn register_neighbors(&mut self, point: &Point2<i32>) {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
 
         area.walk().unwrap().iter()
-            .filter(|pt| pt != point)
             .for_each(|pt| self.updates.insert(pt));
     }
 
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
         self.cells.insert(point);
-        self.register(&point);
+        self.register_neighbors(&point);
     }
 
     /// Set cell at given point dead
     fn set_dead(&mut self, point: Point2<i32>) {
-        self.register(&point);
+        self.register_neighbors(&point);
         self.cells.remove(&point);
     }
 

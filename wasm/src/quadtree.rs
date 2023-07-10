@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 use na::Point2;
-use py::{BBox, Holds, Intersection, Walkable};
-use wasm_bindgen::JsValue;
-use web_sys::console;
+use py::{Holds, Intersection, Walkable};
 use crate::quadtree::area::Area;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;

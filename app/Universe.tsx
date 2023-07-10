@@ -8,7 +8,7 @@ const TICK_RATE = 100;
 
 // Component
 export default function Universe() {
-  const { Universe, UniverseStyle } = useWasmModule();
+  const { Point2D, Universe, UniverseStyle } = useWasmModule();
 
   // State
   const [universe] = useState(() => Universe.dead(256, 128));
@@ -29,6 +29,7 @@ export default function Universe() {
     canvas.current.width = canvas.current.parentElement!.clientWidth;
 
     universe.style = UniverseStyle.dark();
+    universe.set_update_area(new Point2D(-5, -5), new Point2D(canvas.current.width / 5 + 5, canvas.current.height / 5 + 5));
     universe.redraw(ctx, canvas.current.width, canvas.current.height);
 
     // Follow container size
@@ -40,6 +41,7 @@ export default function Universe() {
 
       canvas.current.height = height;
       canvas.current.width = width;
+      universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5));
       universe.redraw(ctx!, width, height);
     });
 
@@ -83,7 +85,7 @@ export default function Universe() {
     const now = performance.now();
 
     if (context && now - last.current > 10) {
-      universe.insert_around(context, event.clientX / 5, event.clientY / 5, 3);
+      universe.insert_around(context, new Point2D(event.clientX / 5, event.clientY / 5), 3);
       last.current = now;
     }
   }, [context, universe]);
