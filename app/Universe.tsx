@@ -96,5 +96,5 @@ export default function Universe() {
   }, [context, universe]);
 
   // Render
-  return <canvas ref={canvas} onMouseMove={handleMove} />;
+  return <canvas ref={canvas} onMouseMove={handleMove} style={{ display: 'block' }} />;
 }
