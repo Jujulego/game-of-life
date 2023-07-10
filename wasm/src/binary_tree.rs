@@ -58,6 +58,10 @@ impl BinaryTree {
             self.elements.remove(idx);
         }
     }
+
+    pub fn clear(&mut self) {
+        self.elements.clear();
+    }
 }
 
 #[cfg(test)]

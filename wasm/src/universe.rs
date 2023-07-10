@@ -124,10 +124,6 @@ impl Universe {
         };
 
         for &cell in old.updates.iter() {
-            if !self.update_area.holds(&cell) {
-                continue
-            }
-
             let (is_alive, neighbors) = old.cell_state(&cell);
 
             if is_alive {
@@ -170,14 +166,13 @@ impl Universe {
 
         let old = mem::replace(&mut self.update_area, BBox::from_points(&start, &end));
 
-        if let Some(old) = old.end_point() {
-            for cell in &(point![start.x, old.y]..=end).walk().unwrap() {
-                self.updates.insert(cell);
-            }
+        for cell in self.cells.iter() {
+            if !old.holds(cell) {
+                let area = point![cell.x - 1, cell.y - 1]..=point![cell.x + 1, cell.y + 1];
 
-            for cell in &(point![old.x, start.y]..=point![end.x, old.y]).walk().unwrap() {
-                self.updates.insert(cell);
-            }
+                area.walk().unwrap().iter()
+                    .for_each(|pt| self.updates.insert(pt));
+            };
         }
     }
 
@@ -194,7 +189,11 @@ impl Universe {
 
 impl Universe {
     /// Register cells to update
-    fn register_neighbors(&mut self, point: &Point2<i32>) {
+    fn register_with_neighbors(&mut self, point: &Point2<i32>) {
+        if !self.update_area.holds(point) {
+            return;
+        }
+
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
 
         area.walk().unwrap().iter()
@@ -204,12 +203,12 @@ impl Universe {
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
         self.cells.insert(point);
-        self.register_neighbors(&point);
+        self.register_with_neighbors(&point);
     }
 
     /// Set cell at given point dead
     fn set_dead(&mut self, point: Point2<i32>) {
-        self.register_neighbors(&point);
+        self.register_with_neighbors(&point);
         self.cells.remove(&point);
     }
 

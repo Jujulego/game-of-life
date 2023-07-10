@@ -6,6 +6,16 @@ import { useWasmModule } from '@/hooks/useWasmModule';
 // Constants
 const TICK_RATE = 100;
 
+// Utils
+function measure(name: string, fn: () => void) {
+  performance.mark(`${name}-start`);
+
+  fn();
+
+  performance.mark(`${name}-end`);
+  performance.measure(name, `${name}-start`, `${name}-end`);
+}
+
 // Component
 export default function Universe() {
   const { Point2D, Universe, UniverseStyle } = useWasmModule();
@@ -25,12 +35,12 @@ export default function Universe() {
     let ctx = canvas.current.getContext('2d')!;
     setContext(ctx);
 
-    canvas.current.height = canvas.current.parentElement!.clientHeight;
-    canvas.current.width = canvas.current.parentElement!.clientWidth;
+    const height = canvas.current.height = canvas.current.parentElement!.clientHeight;
+    const width = canvas.current.width = canvas.current.parentElement!.clientWidth;
 
     universe.style = UniverseStyle.dark();
-    universe.set_update_area(new Point2D(-5, -5), new Point2D(canvas.current.width / 5 + 5, canvas.current.height / 5 + 5));
-    universe.redraw(ctx, canvas.current.width, canvas.current.height);
+    measure("set_update_area", () => universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5)));
+    universe.redraw(ctx, width, height);
 
     // Follow container size
     const observer = new ResizeObserver((entries) => {
@@ -41,7 +51,7 @@ export default function Universe() {
 
       canvas.current.height = height;
       canvas.current.width = width;
-      universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5));
+      measure("set_update_area", () => universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5)));
       universe.redraw(ctx!, width, height);
     });
 
@@ -62,12 +72,7 @@ export default function Universe() {
       if (context && time - lastTick > TICK_RATE) {
         lastTick = time;
 
-        performance.mark("tick-start");
-
-        universe.tick(context);
-
-        performance.mark("tick-end");
-        performance.measure("tick", "tick-start", "tick-end");
+        measure("tick", () => universe.tick(context));
       }
 
       frame = requestAnimationFrame(tick);
