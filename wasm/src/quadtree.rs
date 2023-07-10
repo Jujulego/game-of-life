@@ -240,6 +240,52 @@ mod tests {
     }
 
     #[test]
+    fn test_insert_twice() {
+        // Initiate tree
+        let mut tree = Quadtree::default();
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty]
+            }
+        );
+
+        // Insert a point
+        tree.insert(point![3, 1]);
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Leaf(point![3, 1]),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+
+        // Insert again point
+        tree.insert(point![3, 1]);
+
+        assert_eq!(
+            tree.root,
+            Node {
+                area: Area::global(),
+                children: [
+                    Tree::Leaf(point![3, 1]),
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty
+                ]
+            }
+        );
+    }
+
+    #[test]
     fn test_remove_point() {
         // Initiate tree
         let mut tree = Quadtree::default();

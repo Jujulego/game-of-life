@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::mem;
 use js_sys::Math;
-use na::{point, Point2, vector, Vector2};
+use na::{distance, point, Point2, vector, Vector2};
 use py::{BBox, Walkable};
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
@@ -93,6 +93,22 @@ impl Universe {
         }
 
         universe
+    }
+
+    /// Inserts some cells around given position
+    pub fn insert_around(&mut self, cx: i32, cy: i32, r: i32) {
+        let center = point![cx, cy];
+        let area = point![max(cx - r, 0), max(cy - r, 0)]..=point![min(cx + r, self.size.x as i32 - 1), min(cy + r, self.size.y as i32 - 1)];
+
+        area.walk().unwrap().iter()
+            .filter(|pt| distance::<f32, 2>(&center.cast(), &pt.cast()) <= r as f32)
+            .for_each(|pt| {
+                let rand = Math::random();
+
+                if rand < 0.25 {
+                    self.set_alive(pt)
+                }
+            });
     }
 
     /// Compute next state

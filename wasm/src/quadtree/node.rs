@@ -61,6 +61,10 @@ impl Node {
         let idx = self.area.quarter(at.anchor()) as usize;
         let pos = unsafe { self.children.get_unchecked_mut(idx) };
 
+        if &element == pos {
+            return;
+        }
+
         match pos {
             Tree::Empty => *pos = element,
             &mut Tree::Leaf(pt) => {

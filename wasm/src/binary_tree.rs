@@ -61,6 +61,7 @@ impl BinaryTree {
 }
 
 #[cfg(test)]
+#[cfg(feature = "binary-tree")]
 mod tests {
     use na::point;
     use super::*;

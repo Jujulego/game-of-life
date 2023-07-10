@@ -1,18 +1,19 @@
 'use client'
 
+import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useWasmModule } from '@/hooks/useWasmModule';
-import { useEffect, useRef, useState } from 'react';
 
 // Constants
 const CELL_SIZE = 5;
-const FRAME_RATE = 100;
+const TICK_RATE = 100;
+const FRAME_RATE = 25;
 
 // Component
 export default function Universe() {
   const { Universe, UniverseStyle } = useWasmModule();
 
   // State
-  const [universe] = useState(() => Universe.fixed(256, 128));
+  const [universe] = useState(() => Universe.dead(256, 128));
 
   // Refs
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -34,31 +35,42 @@ export default function Universe() {
     const ctx = canvas.current.getContext('2d')!;
 
     let frame: number;
-    let last = 0;
+    let lastTick = 0;
+    let lastFrame = 0;
 
-    function loop(time: DOMHighResTimeStamp) {
-      if (time - last > FRAME_RATE) {
-        last = time;
-
-        // Update state
-        performance.mark('loop-start');
-
+    function tick(time: DOMHighResTimeStamp) {
+      // Update state
+      if (time - lastTick > TICK_RATE) {
+        lastTick = time;
         universe.tick();
+      }
 
-        performance.mark('loop-end');
-        performance.measure('loop', 'loop-start', 'loop-end');
-
+      // Render state
+      if (time - lastFrame > FRAME_RATE) {
+        lastFrame = time;
         universe.render(ctx);
       }
 
-      frame = requestAnimationFrame(loop);
+      frame = requestAnimationFrame(tick);
     }
 
-    frame = requestAnimationFrame(loop);
+    frame = requestAnimationFrame(tick);
 
     return () => cancelAnimationFrame(frame);
   }, [universe]);
 
+  // Callbacks
+  const last = useRef(0);
+
+  const handleMove = useCallback((event: MouseEvent<HTMLCanvasElement>) => {
+    const now = performance.now();
+
+    if (now - last.current > 10) {
+      universe.insert_around(event.clientX / 5, event.clientY / 5, 3);
+      last.current = now;
+    }
+  }, [universe]);
+
   // Render
-  return <canvas ref={canvas} />
+  return <canvas ref={canvas} onMouseMove={handleMove} />
 }
