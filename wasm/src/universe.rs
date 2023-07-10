@@ -1,6 +1,6 @@
 use js_sys::Math;
 use na::{point, Point2, vector, Vector2};
-use py::{BBox, Walkable};
+use py::BBox;
 use py::wasm::Vector2D;
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
@@ -99,14 +99,13 @@ impl Universe {
             for col in 0..self.size.x as i32 {
                 let point = point![col, row];
 
-                let cell = old.is_alive(&point);
-                let live_neighbors = old.alive_neighbor_count(&point);
+                let (is_alive, neighbors) = old.cell_state(&point);
 
-                if cell {
-                    if !(2..=3).contains(&live_neighbors) {
+                if is_alive {
+                    if !(2..=3).contains(&neighbors) {
                         self.set_dead(point);
                     }
-                } else if live_neighbors == 3 {
+                } else if neighbors == 3 {
                     self.set_alive(point);
                 }
             }
@@ -170,20 +169,36 @@ impl Universe {
 
     /// Count alive neighbors of given point
     #[cfg(feature = "binary-tree")]
-    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
+    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
+        let mut neighbors = 0;
+        let mut is_alive = false;
 
-        self.cells.query(area)
-            .filter(|&pt| pt != point)
-            .count()
+        for pt in self.cells.query(area) {
+            if pt == point {
+                is_alive = true;
+            } else {
+                neighbors += 1;
+            }
+        }
+
+        (is_alive, neighbors)
     }
 
     #[cfg(feature = "quadtree")]
-    fn alive_neighbor_count(&self, point: &Point2<i32>) -> usize {
+    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
+        let mut neighbors = 0;
+        let mut is_alive = false;
 
-        self.cells.query(area)
-            .filter(|&pt| pt != point)
-            .count()
+        for pt in self.cells.query(area) {
+            if pt == point {
+                is_alive = true;
+            } else {
+                neighbors += 1;
+            }
+        }
+
+        (is_alive, neighbors)
     }
 }
