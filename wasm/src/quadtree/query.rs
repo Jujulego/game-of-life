@@ -1,16 +1,15 @@
 use na::Point2;
-use py::Holds;
+use py::{Holds, Overlaps};
 use crate::quadtree::area::Area;
 use crate::quadtree::node::Node;
 use crate::quadtree::tree::Tree;
-use crate::traits::overlap::Overlaps;
 
-pub struct Query<'a, B: Holds<Point2<i64>>> {
+pub struct Query<'a, B: Holds<Point2<i32>>> {
     bbox: B,
     stack: Vec<&'a Tree>,
 }
 
-impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Query<'a, B> {
+impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Query<'a, B> {
     pub fn new(bbox: B, root: &'a Node) -> Query<'a, B> {
         let mut stack = Vec::new();
         stack.extend(&root.children);
@@ -19,8 +18,8 @@ impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Query<'a, B> {
     }
 }
 
-impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Iterator for Query<'a, B> {
-    type Item = &'a Point2<i64>;
+impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Iterator for Query<'a, B> {
+    type Item = &'a Point2<i32>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -33,7 +32,7 @@ impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Iterator for Query<'a, B> {
                     }
                 },
                 Some(Tree::Node(child)) => {
-                    if self.bbox.overlap(&child.area) {
+                    if self.bbox.overlaps(&child.area) {
                         self.stack.extend(&child.children)
                     }
                 },

@@ -22,7 +22,7 @@ impl Node {
     }
 
     /// Test if node contains point
-    pub fn has(&self, point: &Point2<i64>) -> bool {
+    pub fn has(&self, point: &Point2<i32>) -> bool {
         let idx = self.area.quarter(point) as usize;
 
         match unsafe { self.children.get_unchecked(idx) } {
@@ -92,7 +92,7 @@ impl Node {
     }
 
     /// Removes point from node
-    pub fn remove(&mut self, point: &Point2<i64>) {
+    pub fn remove(&mut self, point: &Point2<i32>) {
         let idx = self.area.quarter(point) as usize;
         let pos = unsafe { self.children.get_unchecked_mut(idx) };
 

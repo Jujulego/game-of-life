@@ -30,7 +30,7 @@ pub struct Universe {
     cells: Quadtree,
     style: UniverseStyle,
     updates: BinaryTree,
-    update_area: BBox<i64, 2>,
+    update_area: BBox<i32, 2>,
 }
 
 #[wasm_bindgen]
@@ -94,7 +94,7 @@ impl Universe {
     }
 
     /// Inserts some cells around given position
-    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, center: &PointInt2D, r: i64) {
+    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, center: &PointInt2D, r: i32) {
         let center = center.as_ref();
         let area = point![center.x - r, center.y - r]..=point![center.x + r, center.y + r];
 
@@ -146,11 +146,11 @@ impl Universe {
         }
     }
 
-    pub fn redraw(&self, ctx: &CanvasRenderingContext2d, width: i64, height: i64) {
+    pub fn redraw(&self, ctx: &CanvasRenderingContext2d, size: VectorInt2D) {
         ctx.set_fill_style(self.style.dead_color());
-        ctx.fill_rect(0.0, 0.0, width as f64, height as f64);
+        ctx.fill_rect(0.0, 0.0, size.dx() as f64, size.dy() as f64);
 
-        let area = Point2::origin()..point![width, height];
+        let area = Point2::origin()..point![size.dx(), size.dy()];
 
         for cell in self.cells.query(area) {
             let pos = cell.cast::<f64>() * 5.0;
@@ -189,7 +189,7 @@ impl Universe {
 
 impl Universe {
     /// Register cells to update
-    fn register_with_neighbors(&mut self, point: &Point2<i64>) {
+    fn register_with_neighbors(&mut self, point: &Point2<i32>) {
         if !self.update_area.holds(point) {
             return;
         }
@@ -200,20 +200,20 @@ impl Universe {
     }
 
     /// Set cell at given point alive
-    fn set_alive(&mut self, point: Point2<i64>) {
+    fn set_alive(&mut self, point: Point2<i32>) {
         self.cells.insert(point);
         self.register_with_neighbors(&point);
     }
 
     /// Set cell at given point dead
-    fn set_dead(&mut self, point: Point2<i64>) {
+    fn set_dead(&mut self, point: Point2<i32>) {
         self.register_with_neighbors(&point);
         self.cells.remove(&point);
     }
 
     /// Get cell state and neighbor count
     #[cfg(feature = "binary-tree")]
-    fn cell_state(&self, point: &Point2<i64>) -> (bool, usize) {
+    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
         let mut neighbors = 0;
         let mut is_alive = false;
@@ -231,7 +231,7 @@ impl Universe {
 
     /// Get cell state and neighbor count
     #[cfg(feature = "quadtree")]
-    fn cell_state(&self, point: &Point2<i64>) -> (bool, usize) {
+    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
         let mut neighbors = 0;
         let mut is_alive = false;

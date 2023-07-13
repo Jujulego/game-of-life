@@ -3,15 +3,15 @@ use na::Point2;
 use py::{BBoxWalker, Holds, Walkable};
 use crate::utils::cmp_xy_order;
 
-pub struct BinaryQuery<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> {
+pub struct BinaryQuery<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> {
     area: B,
-    slice: &'a [Point2<i64>],
-    walker: BBoxWalker<i64, 2>,
-    next: Option<Point2<i64>>,
+    slice: &'a [Point2<i32>],
+    walker: BBoxWalker<i32, 2>,
+    next: Option<Point2<i32>>,
 }
 
-impl<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> BinaryQuery<'a, B> {
-    pub fn new(area: B, slice: &'a [Point2<i64>]) -> BinaryQuery<'a, B> {
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> BinaryQuery<'a, B> {
+    pub fn new(area: B, slice: &'a [Point2<i32>]) -> BinaryQuery<'a, B> {
         let generator = area.walk().unwrap();
 
         BinaryQuery {
@@ -22,13 +22,13 @@ impl<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> BinaryQuery<'a, B> {
         }
     }
 
-    fn update_next(&mut self, last: &Point2<i64>) {
+    fn update_next(&mut self, last: &Point2<i32>) {
         self.next = self.walker.next(last);
     }
 }
 
-impl<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> Iterator for BinaryQuery<'a, B> {
-    type Item = &'a Point2<i64>;
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> Iterator for BinaryQuery<'a, B> {
+    type Item = &'a Point2<i32>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -71,4 +71,4 @@ impl<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> Iterator for BinaryQuery<'a, 
     }
 }
 
-impl<'a, B: Holds<Point2<i64>> + Walkable<i64, 2>> FusedIterator for BinaryQuery<'a, B> {}
+impl<'a, B: Holds<Point2<i32>> + Walkable<i32, 2>> FusedIterator for BinaryQuery<'a, B> {}

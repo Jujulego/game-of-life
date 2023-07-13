@@ -9,7 +9,7 @@ pub enum Quarter {
     SouthWest = 3,
 }
 
-pub fn quarter(origin: &Point2<i64>, point: &Point2<i64>) -> Quarter {
+pub fn quarter(origin: &Point2<i32>, point: &Point2<i32>) -> Quarter {
     if point.x >= origin.x && point.y >= origin.y {
         Quarter::NorthEast
     } else if point.x >= origin.x {

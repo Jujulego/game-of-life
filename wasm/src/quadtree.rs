@@ -1,12 +1,11 @@
 use std::fmt::Debug;
 use na::Point2;
-use py::{Holds, Intersection, Walkable};
+use py::{Holds, Intersection, Overlaps, Walkable};
 use crate::quadtree::area::Area;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
 use crate::quadtree::query::Query;
 use crate::quadtree::tree::Tree;
-use crate::traits::overlap::Overlaps;
 
 mod area;
 mod division;
@@ -30,18 +29,18 @@ impl Quadtree {
         }
     }
 
-    pub fn inside<B: Walkable<i64, 2>>(bbox: &B) -> Quadtree {
+    pub fn inside<B: Walkable<i32, 2>>(bbox: &B) -> Quadtree {
         Quadtree {
             root: Node::new(Area::surrounding(bbox))
         }
     }
 
     #[inline]
-    pub fn has(&self, point: &Point2<i64>) -> bool {
+    pub fn has(&self, point: &Point2<i32>) -> bool {
         self.root.area.holds(point) && self.root.has(point)
     }
 
-    pub fn query<R: Holds<Point2<i64>> + Overlaps<Area>, B: Intersection<Area, Output=R>>(&self, bbox_a: B) -> Query<R> {
+    pub fn query<R: Holds<Point2<i32>> + Overlaps<Area>, B: Intersection<Area, Output=R>>(&self, bbox_a: B) -> Query<R> {
         let bbox = bbox_a.intersection(&self.root.area);
         Query::new(bbox, &self.root)
     }
@@ -52,7 +51,7 @@ impl Quadtree {
     }
 
     #[inline]
-    pub fn insert(&mut self, point: Point2<i64>) {
+    pub fn insert(&mut self, point: Point2<i32>) {
         if self.root.area.holds(&point) {
             self.root.insert(Tree::Leaf(point), &point);
         } else {
@@ -61,7 +60,7 @@ impl Quadtree {
     }
 
     #[inline]
-    pub fn remove(&mut self, point: &Point2<i64>) {
+    pub fn remove(&mut self, point: &Point2<i32>) {
         if self.root.area.holds(point) {
             self.root.remove(point);
         }
@@ -77,7 +76,7 @@ impl Default for Quadtree {
 }
 
 impl<'a> IntoIterator for &'a Quadtree {
-    type Item = &'a Point2<i64>;
+    type Item = &'a Point2<i32>;
     type IntoIter = Iter<'a>;
 
     #[inline]

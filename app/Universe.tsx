@@ -18,10 +18,10 @@ function measure(name: string, fn: () => void) {
 
 // Component
 export default function Universe() {
-  const { Point2D, Universe, UniverseStyle } = useWasmModule();
+  const { PointInt2D, Universe, UniverseStyle, VectorInt2D } = useWasmModule();
 
   // State
-  const [universe] = useState(() => Universe.dead(256, 128));
+  const [universe] = useState(() => Universe.dead(new VectorInt2D(256, 128)));
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
   // Refs
@@ -39,8 +39,8 @@ export default function Universe() {
     const width = canvas.current.width = canvas.current.parentElement!.clientWidth;
 
     universe.style = UniverseStyle.dark();
-    measure("set_update_area", () => universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5)));
-    universe.redraw(ctx, width, height);
+    measure("set_update_area", () => universe.set_update_area(new PointInt2D(-5, -5), new PointInt2D(width / 5 + 5, height / 5 + 5)));
+    universe.redraw(ctx, new VectorInt2D(width, height));
 
     // Follow container size
     const observer = new ResizeObserver((entries) => {
@@ -51,8 +51,8 @@ export default function Universe() {
 
       canvas.current.height = height;
       canvas.current.width = width;
-      measure("set_update_area", () => universe.set_update_area(new Point2D(-5, -5), new Point2D(width / 5 + 5, height / 5 + 5)));
-      universe.redraw(ctx!, width, height);
+      measure("set_update_area", () => universe.set_update_area(new PointInt2D(-5, -5), new PointInt2D(width / 5 + 5, height / 5 + 5)));
+      universe.redraw(ctx!, new VectorInt2D(width, height));
     });
 
     observer.observe(canvas.current.parentElement!);
@@ -90,7 +90,7 @@ export default function Universe() {
     const now = performance.now();
 
     if (context && now - last.current > 10) {
-      universe.insert_around(context, new Point2D(event.clientX / 5, event.clientY / 5), 3);
+      universe.insert_around(context, new PointInt2D(event.clientX / 5, event.clientY / 5), 3);
       last.current = now;
     }
   }, [context, universe]);

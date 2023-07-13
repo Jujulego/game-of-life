@@ -1,16 +1,15 @@
 use std::cmp::{max, min};
 use std::ops::{Range, RangeInclusive};
 use na::{point, Point2};
-use py::{BBox, Holds, Intersection, Walkable};
+use py::{BBox, Holds, Intersection, Overlaps, Walkable};
 use crate::quadtree::division::Division;
 use crate::quadtree::quarter::{quarter, Quarter};
-use crate::traits::overlap::Overlaps;
 
 /// An area in the quadtree
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Area {
-    pub anchor: Point2<i64>,
-    pub size: u64,
+    pub anchor: Point2<i32>,
+    pub size: u32,
 }
 
 impl Area {
@@ -18,13 +17,13 @@ impl Area {
     pub fn global() -> Area {
         Area {
             anchor: Point2::origin(),
-            size: u64::MAX,
+            size: u32::MAX,
         }
     }
 
-    fn search_area(start: &Point2<i64>, end: &Point2<i64>, mut bits: u64) -> Area {
-        while bits < u64::BITS {
-            let mask = (u64::MAX << bits) as i64;
+    fn search_area(start: &Point2<i32>, end: &Point2<i32>, mut bits: u32) -> Area {
+        while bits < u32::BITS {
+            let mask = (u32::MAX << bits) as i32;
 
             let area = Area {
                 anchor: point![start.x & mask, start.y & mask],
@@ -43,7 +42,7 @@ impl Area {
     }
 
     /// Returns area surrounding given bbox
-    pub fn surrounding<B: Walkable<i64, 2>>(bbox: &B) -> Area {
+    pub fn surrounding<B: Walkable<i32, 2>>(bbox: &B) -> Area {
         let start = bbox.first_point();
         let end = bbox.last_point();
 
@@ -51,7 +50,7 @@ impl Area {
             (Some(start), Some(end)) => {
                 if quarter(&Point2::origin(), start) == quarter(&Point2::origin(), end) {
                     let size = end - start;
-                    let bits = u64::BITS - max(size.x.unsigned_abs(), size.y.unsigned_abs()).leading_zeros();
+                    let bits = u32::BITS - max(size.x.unsigned_abs(), size.y.unsigned_abs()).leading_zeros();
 
                     Area::search_area(start, end, bits)
                 } else {
@@ -88,11 +87,11 @@ impl Area {
         Area::search_area(&start, &end, bits)
     }
 
-    fn center(&self) -> Point2<i64> {
-        if self.size == u64::MAX {
+    fn center(&self) -> Point2<i32> {
+        if self.size == u32::MAX {
             Point2::origin()
         } else {
-            let delta = self.size as i64 / 2;
+            let delta = self.size as i32 / 2;
 
             point![
                 self.anchor.x + delta,
@@ -102,7 +101,7 @@ impl Area {
     }
 
     #[inline]
-    pub fn quarter(&self, point: &Point2<i64>) -> Quarter {
+    pub fn quarter(&self, point: &Point2<i32>) -> Quarter {
         quarter(&self.center(), point)
     }
 }
@@ -110,19 +109,19 @@ impl Area {
 // Utils
 impl Division for Area {
     #[inline]
-    fn anchor(&self) -> &Point2<i64> {
+    fn anchor(&self) -> &Point2<i32> {
         &self.anchor
     }
 
     #[inline]
-    fn size(&self) -> u64 {
+    fn size(&self) -> u32 {
         self.size
     }
 }
 
 impl<D: Division> Holds<D> for Area {
     fn holds(&self, object: &D) -> bool {
-        if self.size == u64::MAX {
+        if self.size == u32::MAX {
             true
         } else if object.size() > self.size {
             false
@@ -131,16 +130,16 @@ impl<D: Division> Holds<D> for Area {
 
             self.anchor.iter()
                 .zip(object.anchor().iter())
-                .all(|(a, o)| (a ^ o) as u64 <= left)
+                .all(|(a, o)| (a ^ o) as u32 <= left)
         }
     }
 }
 
-impl Intersection<Area> for Range<Point2<i64>> {
-    type Output = Range<Point2<i64>>;
+impl Intersection<Area> for Range<Point2<i32>> {
+    type Output = Range<Point2<i32>>;
 
     fn intersection(&self, lhs: &Area) -> Self::Output {
-        if lhs.size == u64::MAX {
+        if lhs.size == u32::MAX {
             self.clone()
         } else {
             self.intersection(&Range::from(lhs))
@@ -148,11 +147,11 @@ impl Intersection<Area> for Range<Point2<i64>> {
     }
 }
 
-impl Intersection<Area> for RangeInclusive<Point2<i64>> {
-    type Output = BBox<i64, 2>;
+impl Intersection<Area> for RangeInclusive<Point2<i32>> {
+    type Output = BBox<i32, 2>;
 
     fn intersection(&self, lhs: &Area) -> Self::Output {
-        if lhs.size == u64::MAX {
+        if lhs.size == u32::MAX {
             BBox::from(self.clone())
         } else {
             self.intersection(&Range::from(lhs))
@@ -160,12 +159,12 @@ impl Intersection<Area> for RangeInclusive<Point2<i64>> {
     }
 }
 
-impl Overlaps<Area> for Range<Point2<i64>> {
-    fn overlap(&self, lhs: &Area) -> bool {
-        if lhs.size == u64::MAX {
+impl Overlaps<Area> for Range<Point2<i32>> {
+    fn overlaps(&self, lhs: &Area) -> bool {
+        if lhs.size == u32::MAX {
             true
         } else {
-            let size = lhs.size as i64;
+            let size = lhs.size as i32;
 
             self.start.x < (lhs.anchor.x + size) && self.start.y < (lhs.anchor.y + size) && self.end.x >= lhs.anchor.x && self.end.y >= lhs.anchor.y
         }
@@ -173,9 +172,9 @@ impl Overlaps<Area> for Range<Point2<i64>> {
 }
 
 // Conversions
-impl From<&Area> for Range<Point2<i64>> {
+impl From<&Area> for Range<Point2<i32>> {
     fn from(value: &Area) -> Self {
-        value.anchor..Point2::new(value.anchor.x + value.size as i64, value.anchor.y + value.size as i64)
+        value.anchor..Point2::new(value.anchor.x + value.size as i32, value.anchor.y + value.size as i32)
     }
 }
 
