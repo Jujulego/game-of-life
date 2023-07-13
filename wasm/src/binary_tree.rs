@@ -9,7 +9,7 @@ use crate::binary_query::BinaryQuery;
 /// Quadtree
 #[derive(Clone)]
 pub struct BinaryTree {
-    elements: Vec<Point2<i32>>,
+    elements: Vec<Point2<i64>>,
 }
 
 // Methods
@@ -22,12 +22,12 @@ impl BinaryTree {
     }
 
     /// Returns iterator on elements
-    pub fn iter(&self) -> Iter<'_, Point2<i32>> {
+    pub fn iter(&self) -> Iter<'_, Point2<i64>> {
         self.elements.iter()
     }
 
     /// Returns true if quadtree contains point
-    pub fn has(&self, point: &Point2<i32>) -> bool {
+    pub fn has(&self, point: &Point2<i64>) -> bool {
         self.elements
             .binary_search_by(|pt| cmp_xy_order(pt, point))
             .is_ok()
@@ -35,12 +35,12 @@ impl BinaryTree {
 
     /// Returns all elements inside the given area
     #[cfg(feature = "binary-tree")]
-    pub fn query<B: Holds<Point2<i32>> + Walkable<i32, 2>>(&self, area: B) -> BinaryQuery<'_, B> {
+    pub fn query<B: Holds<Point2<i64>> + Walkable<i64, 2>>(&self, area: B) -> BinaryQuery<'_, B> {
         BinaryQuery::new(area, self.elements.as_slice())
     }
 
     /// Insert point inside tree (if missing)
-    pub fn insert(&mut self, point: Point2<i32>) {
+    pub fn insert(&mut self, point: Point2<i64>) {
         let res = self.elements
             .binary_search_by(|pt| cmp_xy_order(pt, &point));
 
@@ -50,7 +50,7 @@ impl BinaryTree {
     }
 
     /// Removes point from tree (if present)
-    pub fn remove(&mut self, point: &Point2<i32>) {
+    pub fn remove(&mut self, point: &Point2<i64>) {
         let res = self.elements
             .binary_search_by(|pt| cmp_xy_order(pt, point));
 
@@ -84,7 +84,7 @@ mod tests {
         tree.insert(point![15, 10]);
 
         assert_eq!(
-            tree.query(area).copied().collect::<Vec<Point2<i32>>>(),
+            tree.query(area).copied().collect::<Vec<Point2<i64>>>(),
             vec![
                 point![5, 5],
                 point![5, 10],

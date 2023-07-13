@@ -1,8 +1,8 @@
 use std::mem;
 use js_sys::Math;
-use na::{distance, point, Point2, vector};
+use na::{distance, point, Point2};
 use py::{BBox, Holds, PointBounds, Walkable};
-use py::wasm::Point2D;
+use py::wasm::{PointInt2D, VectorInt2D};
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 use crate::binary_tree::BinaryTree;
@@ -30,7 +30,7 @@ pub struct Universe {
     cells: Quadtree,
     style: UniverseStyle,
     updates: BinaryTree,
-    update_area: BBox<i32, 2>,
+    update_area: BBox<i64, 2>,
 }
 
 #[wasm_bindgen]
@@ -48,8 +48,8 @@ impl Universe {
 
     /// Builds a dead universe
     #[cfg(feature = "quadtree")]
-    pub fn dead(width: i32, height: i32) -> Universe {
-        let bbox = BBox::from_anchor_size(&Point2::origin(), &vector![width, height]);
+    pub fn dead(size: VectorInt2D) -> Universe {
+        let bbox = BBox::from_anchor_size(&Point2::origin(), size.as_ref());
 
         Universe {
             cells: Quadtree::new(),
@@ -60,12 +60,12 @@ impl Universe {
     }
 
     /// Builds a fixed universe
-    pub fn fixed(width: i32, height: i32) -> Universe {
-        let mut universe = Universe::dead(width, height);
+    pub fn fixed(size: VectorInt2D) -> Universe {
+        let mut universe = Universe::dead(size);
 
-        for row in 0..height {
-            for col in 0..width {
-                let i = row * width + col;
+        for row in 0..size.dy() {
+            for col in 0..size.dx() {
+                let i = row * size.dx() + col;
 
                 if i % 2 == 0 || i % 7 == 0 || i % 13 == 0 {
                     universe.set_alive(point![col, row])
@@ -77,11 +77,11 @@ impl Universe {
     }
 
     /// Builds a random universe
-    pub fn random(width: i32, height: i32) -> Universe {
-        let mut universe = Universe::dead(width, height);
+    pub fn random(size: VectorInt2D) -> Universe {
+        let mut universe = Universe::dead(size);
 
-        for row in 0..height {
-            for col in 0..width {
+        for row in 0..size.dy() {
+            for col in 0..size.dx() {
                 let rand = Math::random();
 
                 if rand < 0.5 {
@@ -94,12 +94,12 @@ impl Universe {
     }
 
     /// Inserts some cells around given position
-    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, center: &Point2D, r: i32) {
+    pub fn insert_around(&mut self, ctx: &CanvasRenderingContext2d, center: &PointInt2D, r: i64) {
         let center = center.as_ref();
-        let area = point![center.x as i32 - r, center.y as i32 - r]..=point![center.x as i32 + r, center.y as i32 + r];
+        let area = point![center.x - r, center.y - r]..=point![center.x + r, center.y + r];
 
         area.walk().unwrap().iter()
-            .filter(|cell| distance(center, &cell.cast()) <= r as f64)
+            .filter(|cell| distance::<f64, 2>(&center.cast(), &cell.cast()) <= r as f64)
             .for_each(|cell| {
                 let rand = Math::random();
 
@@ -146,7 +146,7 @@ impl Universe {
         }
     }
 
-    pub fn redraw(&self, ctx: &CanvasRenderingContext2d, width: i32, height: i32) {
+    pub fn redraw(&self, ctx: &CanvasRenderingContext2d, width: i64, height: i64) {
         ctx.set_fill_style(self.style.dead_color());
         ctx.fill_rect(0.0, 0.0, width as f64, height as f64);
 
@@ -160,11 +160,11 @@ impl Universe {
         }
     }
 
-    pub fn set_update_area(&mut self, start: &Point2D, end: &Point2D) {
-        let start = point![start.x() as i32, start.y() as i32];
-        let end = point![end.x() as i32, end.y() as i32];
+    pub fn set_update_area(&mut self, start: &PointInt2D, end: &PointInt2D) {
+        let start = start.as_ref();
+        let end = *end.as_ref();
 
-        let old = mem::replace(&mut self.update_area, BBox::from_points(&start, &end));
+        let old = mem::replace(&mut self.update_area, BBox::from_points(start, &end));
 
         for cell in self.cells.iter() {
             if !old.holds(cell) {
@@ -189,11 +189,10 @@ impl Universe {
 
 impl Universe {
     /// Register cells to update
-    fn register_with_neighbors(&mut self, point: &Point2<i32>) {
+    fn register_with_neighbors(&mut self, point: &Point2<i64>) {
         if !self.update_area.holds(point) {
             return;
         }
-
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
 
         area.walk().unwrap().iter()
@@ -201,20 +200,20 @@ impl Universe {
     }
 
     /// Set cell at given point alive
-    fn set_alive(&mut self, point: Point2<i32>) {
+    fn set_alive(&mut self, point: Point2<i64>) {
         self.cells.insert(point);
         self.register_with_neighbors(&point);
     }
 
     /// Set cell at given point dead
-    fn set_dead(&mut self, point: Point2<i32>) {
+    fn set_dead(&mut self, point: Point2<i64>) {
         self.register_with_neighbors(&point);
         self.cells.remove(&point);
     }
 
     /// Get cell state and neighbor count
     #[cfg(feature = "binary-tree")]
-    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
+    fn cell_state(&self, point: &Point2<i64>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
         let mut neighbors = 0;
         let mut is_alive = false;
@@ -232,7 +231,7 @@ impl Universe {
 
     /// Get cell state and neighbor count
     #[cfg(feature = "quadtree")]
-    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
+    fn cell_state(&self, point: &Point2<i64>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
         let mut neighbors = 0;
         let mut is_alive = false;

@@ -2,14 +2,14 @@ use na::Point2;
 use crate::quadtree::division::Division;
 
 // Utils
-impl Division for Point2<i32> {
+impl Division for Point2<i64> {
     #[inline]
-    fn anchor(&self) -> &Point2<i32> {
+    fn anchor(&self) -> &Point2<i64> {
         self
     }
 
     #[inline]
-    fn size(&self) -> u32 {
+    fn size(&self) -> u64 {
         1
     }
 }

@@ -16,7 +16,7 @@ impl<'a> Iter<'a> {
 }
 
 impl<'a> Iterator for Iter<'a> {
-    type Item = &'a Point2<i32>;
+    type Item = &'a Point2<i64>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {

@@ -5,12 +5,12 @@ use crate::quadtree::node::Node;
 use crate::quadtree::tree::Tree;
 use crate::traits::overlap::Overlaps;
 
-pub struct Query<'a, B: Holds<Point2<i32>>> {
+pub struct Query<'a, B: Holds<Point2<i64>>> {
     bbox: B,
     stack: Vec<&'a Tree>,
 }
 
-impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Query<'a, B> {
+impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Query<'a, B> {
     pub fn new(bbox: B, root: &'a Node) -> Query<'a, B> {
         let mut stack = Vec::new();
         stack.extend(&root.children);
@@ -19,8 +19,8 @@ impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Query<'a, B> {
     }
 }
 
-impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Iterator for Query<'a, B> {
-    type Item = &'a Point2<i32>;
+impl<'a, B: Holds<Point2<i64>> + Overlaps<Area>> Iterator for Query<'a, B> {
+    type Item = &'a Point2<i64>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {

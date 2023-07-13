@@ -4,7 +4,7 @@ use crate::quadtree::node::Node;
 /// Quadtree itself
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Tree {
-    Leaf(Point2<i32>),
+    Leaf(Point2<i64>),
     Node(Box<Node>),
     Empty
 }
