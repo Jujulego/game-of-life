@@ -1,7 +1,10 @@
 use std::cmp::{max, min};
-use std::ops::{Range, RangeInclusive};
-use na::{point, Point2};
-use py::{BBox, Holds, Intersection, Overlaps, Walkable};
+use std::collections::Bound::Excluded;
+use std::ops::{Bound, Range};
+use std::ops::Bound::{Included, Unbounded};
+use na::{point, Point, Point2};
+use py::{Holds, Intersection, Overlaps, PointBounds, Walkable};
+use py::traits::DimensionBounds;
 use crate::quadtree::division::Division;
 use crate::quadtree::quarter::{quarter, Quarter};
 
@@ -100,6 +103,15 @@ impl Area {
         }
     }
 
+    fn as_range(&self) -> (Bound<Point2<i32>>, Bound<Point2<i32>>) {
+        if self.size == u32::MAX {
+            (Unbounded, Unbounded)
+        } else {
+            let size = self.size as i32;
+            (Included(self.anchor), Excluded(Point2::new(self.anchor.x + size, self.anchor.y + size)))
+        }
+    }
+
     #[inline]
     pub fn quarter(&self, point: &Point2<i32>) -> Quarter {
         quarter(&self.center(), point)
@@ -119,6 +131,40 @@ impl Division for Area {
     }
 }
 
+impl DimensionBounds<i32, 2> for Area {
+    type Output = (Bound<i32>, Bound<i32>);
+
+    unsafe fn get_bounds_unchecked(&self, idx: usize) -> Self::Output {
+        if self.size == u32::MAX {
+            (Unbounded, Unbounded)
+        } else {
+            let start = *self.anchor.get_unchecked(idx);
+            (Included(start), Excluded(start + self.size as i32))
+        }
+    }
+}
+
+impl PointBounds<i32, 2> for Area {
+    #[inline]
+    fn start_point(&self) -> Option<Point<i32, 2>> {
+        if self.size == u32::MAX {
+            None
+        } else {
+            Some(self.anchor)
+        }
+    }
+
+    #[inline]
+    fn end_point(&self) -> Option<Point<i32, 2>> {
+        if self.size == u32::MAX {
+            None
+        } else {
+            let size = self.size as i32;
+            Some(Point2::new(self.anchor.x + size, self.anchor.y + size))
+        }
+    }
+}
+
 impl<D: Division> Holds<D> for Area {
     fn holds(&self, object: &D) -> bool {
         if self.size == u32::MAX {
@@ -135,26 +181,18 @@ impl<D: Division> Holds<D> for Area {
     }
 }
 
-impl Intersection<Area> for Range<Point2<i32>> {
-    type Output = Range<Point2<i32>>;
+impl<T, R> Intersection<T> for Area
+where
+    T: Clone + Intersection<(Bound<Point2<i32>>, Bound<Point2<i32>>), Output=R>,
+    R: From<T>
+{
+    type Output = R;
 
-    fn intersection(&self, lhs: &Area) -> Self::Output {
-        if lhs.size == u32::MAX {
-            self.clone()
+    fn intersection(&self, rhs: &T) -> Self::Output {
+        if self.size == u32::MAX {
+            R::from(rhs.clone())
         } else {
-            self.intersection(&Range::from(lhs))
-        }
-    }
-}
-
-impl Intersection<Area> for RangeInclusive<Point2<i32>> {
-    type Output = BBox<i32, 2>;
-
-    fn intersection(&self, lhs: &Area) -> Self::Output {
-        if lhs.size == u32::MAX {
-            BBox::from(self.clone())
-        } else {
-            self.intersection(&Range::from(lhs))
+            rhs.intersection(&self.as_range())
         }
     }
 }
@@ -172,15 +210,17 @@ impl Overlaps<Area> for Range<Point2<i32>> {
 }
 
 // Conversions
-impl From<&Area> for Range<Point2<i32>> {
+impl From<&Area> for (Bound<Point2<i32>>, Bound<Point2<i32>>) {
+    #[inline]
     fn from(value: &Area) -> Self {
-        value.anchor..Point2::new(value.anchor.x + value.size as i32, value.anchor.y + value.size as i32)
+        value.as_range()
     }
 }
 
 // Tests
 #[cfg(test)]
 mod tests {
+    use py::BBox;
     use super::*;
 
     #[test]
@@ -223,21 +263,23 @@ mod tests {
 
     #[test]
     fn test_intersection() {
+        let area = Area { anchor: point![2, 2], size: 2 };
+
         assert_eq!(
-            (point![0, 0]..point![3, 3]).intersection(&Area { anchor: point![2, 2], size: 2 }),
-            point![2, 2]..point![3, 3]
+            area.intersection(&(point![0, 0]..point![3, 3])),
+            BBox::from(point![2, 2]..point![3, 3])
         );
         assert_eq!(
-            (point![0, 3]..point![3, 5]).intersection(&Area { anchor: point![2, 2], size: 2 }),
-            point![2, 3]..point![3, 4]
+            area.intersection(&(point![0, 3]..point![3, 5])),
+            BBox::from(point![2, 3]..point![3, 4])
         );
         assert_eq!(
-            (point![3, 0]..point![5, 3]).intersection(&Area { anchor: point![2, 2], size: 2 }),
-            point![3, 2]..point![4, 3]
+            area.intersection(&(point![3, 0]..point![5, 3])),
+            BBox::from(point![3, 2]..point![4, 3])
         );
         assert_eq!(
-            (point![3, 3]..point![5, 5]).intersection(&Area { anchor: point![2, 2], size: 2 }),
-            point![3, 3]..point![4, 4]
+            area.intersection(&(point![3, 3]..point![5, 5])),
+            BBox::from(point![3, 3]..point![4, 4])
         );
     }
 

@@ -40,9 +40,12 @@ impl Quadtree {
         self.root.area.holds(point) && self.root.has(point)
     }
 
-    pub fn query<R: Holds<Point2<i32>> + Overlaps<Area>, B: Intersection<Area, Output=R>>(&self, bbox_a: B) -> Query<R> {
-        let bbox = bbox_a.intersection(&self.root.area);
-        Query::new(bbox, &self.root)
+    pub fn query<B, R>(&self, bbox: &B) -> Query<R>
+    where
+        Area: Intersection<B, Output=R>,
+        R: Holds<Point2<i32>> + Overlaps<Area>
+    {
+        Query::new(self.root.area.intersection(bbox), &self.root)
     }
 
     #[inline]

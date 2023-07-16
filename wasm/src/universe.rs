@@ -1,7 +1,7 @@
 use std::mem;
 use js_sys::Math;
 use na::{distance, point, Point2};
-use py::{BBox, Holds, PointBounds, Walkable};
+use py::{BBox, Holds, Walkable};
 use py::wasm::{PointInt2D, VectorInt2D};
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
@@ -49,8 +49,6 @@ impl Universe {
     /// Builds a dead universe
     #[cfg(feature = "quadtree")]
     pub fn dead(size: VectorInt2D) -> Universe {
-        let bbox = BBox::from_anchor_size(&Point2::origin(), size.as_ref());
-
         Universe {
             cells: Quadtree::new(),
             style: UniverseStyle::default(),
@@ -152,7 +150,7 @@ impl Universe {
 
         let area = Point2::origin()..point![size.dx(), size.dy()];
 
-        for cell in self.cells.query(area) {
+        for cell in self.cells.query(&area) {
             let pos = cell.cast::<f64>() * 5.0;
 
             ctx.set_fill_style(self.style.alive_color());
@@ -236,7 +234,7 @@ impl Universe {
         let mut neighbors = 0;
         let mut is_alive = false;
 
-        for pt in self.cells.query(area) {
+        for pt in self.cells.query(&area) {
             if pt == point {
                 is_alive = true;
             } else {
