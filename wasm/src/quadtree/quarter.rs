@@ -1,12 +1,13 @@
+use std::mem;
 use na::Point2;
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Quarter {
-    NorthEast = 0,
-    NorthWest = 1,
-    SouthEast = 2,
-    SouthWest = 3,
+    NorthEast = 0b11,
+    NorthWest = 0b01,
+    SouthEast = 0b10,
+    SouthWest = 0b00,
 }
 
 pub fn quarter(origin: &Point2<i32>, point: &Point2<i32>) -> Quarter {
@@ -21,6 +22,20 @@ pub fn quarter(origin: &Point2<i32>, point: &Point2<i32>) -> Quarter {
     }
 }
 
+pub fn global_quarter(point: &Point2<i32>) -> Quarter {
+    let mut quarter = 0u8;
+
+    if point.x >= 0 {
+        quarter |= 0b10;
+    }
+
+    if point.y >= 0 {
+        quarter |= 0b01;
+    }
+
+    unsafe { mem::transmute(quarter) }
+}
+
 // Test
 #[cfg(test)]
 mod test {
@@ -28,10 +43,10 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_quarter() {
-        assert_eq!(quarter(&point![0, 0], &point![1, 1]), Quarter::NorthEast);
-        assert_eq!(quarter(&point![0, 0], &point![1, -1]), Quarter::SouthEast);
-        assert_eq!(quarter(&point![0, 0], &point![-1, 1]), Quarter::NorthWest);
-        assert_eq!(quarter(&point![0, 0], &point![-1, -1]), Quarter::SouthWest);
+    fn test_global_quarter() {
+        assert_eq!(global_quarter(&point![1, 1]), Quarter::NorthEast);
+        assert_eq!(global_quarter(&point![1, -1]), Quarter::SouthEast);
+        assert_eq!(global_quarter(&point![-1, 1]), Quarter::NorthWest);
+        assert_eq!(global_quarter(&point![-1, -1]), Quarter::SouthWest);
     }
 }

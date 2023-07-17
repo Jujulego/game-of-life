@@ -8,9 +8,9 @@ pub struct Iter<'a> {
 }
 
 impl<'a> Iter<'a> {
-    pub fn new(root: &'a Node) -> Iter<'a> {
+    pub fn new<N: Node>(root: &'a N) -> Iter<'a> {
         Iter {
-            stack: root.children.iter().collect()
+            stack: root.children().collect()
         }
     }
 }

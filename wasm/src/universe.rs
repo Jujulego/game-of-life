@@ -6,6 +6,7 @@ use py::wasm::{PointInt2D, VectorInt2D};
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
 use crate::binary_tree::BinaryTree;
+use crate::quadtree::GlobalQuadtree;
 use crate::universe_style::UniverseStyle;
 
 #[cfg(feature = "quadtree")]
@@ -27,7 +28,7 @@ pub struct Universe {
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
-    cells: Quadtree,
+    cells: GlobalQuadtree,
     style: UniverseStyle,
     updates: BinaryTree,
     update_area: BBox<i32, 2>,

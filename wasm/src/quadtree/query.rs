@@ -1,6 +1,6 @@
 use na::Point2;
 use py::{Holds, Overlaps};
-use crate::quadtree::area::Area;
+use crate::quadtree::binary_square::BinarySquare;
 use crate::quadtree::node::Node;
 use crate::quadtree::tree::Tree;
 
@@ -9,16 +9,16 @@ pub struct Query<'a, B: Holds<Point2<i32>>> {
     stack: Vec<&'a Tree>,
 }
 
-impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Query<'a, B> {
-    pub fn new(bbox: B, root: &'a Node) -> Query<'a, B> {
+impl<'a, B: Clone + Holds<Point2<i32>> + Overlaps<BinarySquare>> Query<'a, B> {
+    pub fn new<N: Node>(bbox: &B, root: &'a N) -> Query<'a, B> {
         let mut stack = Vec::new();
-        stack.extend(&root.children);
+        stack.extend(root.children());
 
-        Query { bbox, stack }
+        Query { bbox: bbox.clone(), stack }
     }
 }
 
-impl<'a, B: Holds<Point2<i32>> + Overlaps<Area>> Iterator for Query<'a, B> {
+impl<'a, B: Holds<Point2<i32>> + Overlaps<BinarySquare>> Iterator for Query<'a, B> {
     type Item = &'a Point2<i32>;
 
     fn next(&mut self) -> Option<Self::Item> {

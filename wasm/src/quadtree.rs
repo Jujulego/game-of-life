@@ -1,82 +1,73 @@
 use std::fmt::Debug;
 use na::Point2;
-use py::{Holds, Intersection, Overlaps, Walkable};
-use crate::quadtree::area::Area;
+use py::{Holds, Overlaps};
+use crate::quadtree::binary_square::BinarySquare;
+pub use crate::quadtree::global_node::GlobalNode;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
 use crate::quadtree::query::Query;
 use crate::quadtree::tree::Tree;
 
-mod area;
+mod binary_square;
+mod global_node;
 mod iter;
 mod node;
 mod quarter;
 mod query;
+mod square_node;
 mod tree;
 
 /// Quadtree wrapper
 #[derive(Clone, Debug)]
-pub struct Quadtree {
-    root: Node,
+pub struct Quadtree<N: Node> {
+    root: N,
 }
 
-impl Quadtree {
-    pub fn new() -> Quadtree {
-        Quadtree {
-            root: Node::new(Area::global())
-        }
-    }
-
-    pub fn inside<B: Walkable<i32, 2>>(bbox: &B) -> Quadtree {
-        Quadtree {
-            root: Node::new(Area::surrounding(bbox))
-        }
-    }
-
+impl<N: Node> Quadtree<N> {
     #[inline]
     pub fn has(&self, point: &Point2<i32>) -> bool {
-        self.root.area.holds(point) && self.root.has(point)
-    }
-
-    pub fn query<B, R>(&self, bbox: &B) -> Query<R>
-    where
-        Area: Intersection<B, Output=R>,
-        R: Holds<Point2<i32>> + Overlaps<Area>
-    {
-        Query::new(self.root.area.intersection(bbox), &self.root)
+        self.root.has(point)
     }
 
     #[inline]
     pub fn iter(&self) -> Iter<'_> {
         Iter::new(&self.root)
     }
+}
+
+pub type GlobalQuadtree = Quadtree<GlobalNode>;
+
+impl Quadtree<GlobalNode> {
+    pub fn new() -> Quadtree<GlobalNode> {
+        Quadtree {
+            root: GlobalNode::new(),
+        }
+    }
+
+    pub fn query<B: Clone + Holds<Point2<i32>> + Overlaps<BinarySquare>>(&self, bbox: &B) -> Query<B> {
+        Query::new(bbox, &self.root)
+    }
 
     #[inline]
     pub fn insert(&mut self, point: Point2<i32>) {
-        if self.root.area.holds(&point) {
-            self.root.insert(Tree::Leaf(point), &Area::wrapping(point));
-        } else {
-            panic!("Cannot insert point {point}, it is outside of root node");
-        }
+        self.root.insert(Tree::Leaf(point), &BinarySquare::wrapping(point));
     }
 
     #[inline]
     pub fn remove(&mut self, point: &Point2<i32>) {
-        if self.root.area.holds(point) {
-            self.root.remove(point);
-        }
+        self.root.remove(point);
     }
 }
 
 // Utils
-impl Default for Quadtree {
+impl Default for Quadtree<GlobalNode> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a> IntoIterator for &'a Quadtree {
+impl<'a, N: Node> IntoIterator for &'a Quadtree<N> {
     type Item = &'a Point2<i32>;
     type IntoIter = Iter<'a>;
 
@@ -90,6 +81,7 @@ impl<'a> IntoIterator for &'a Quadtree {
 #[cfg(test)]
 mod tests {
     use na::point;
+    use crate::quadtree::square_node::SquareNode;
     use super::*;
 
     #[test]
@@ -134,8 +126,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty]
             }
         );
@@ -145,8 +136,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
                     Tree::Leaf(point![3, 1]),
                     Tree::Empty,
@@ -161,11 +151,10 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
-                    Tree::Node(Box::new(Node {
-                        area: Area { anchor: point![0, 0], size: 4 },
+                    Tree::Node(Box::new(SquareNode {
+                        area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
                             Tree::Empty,
                             Tree::Leaf(point![1, 3]),
@@ -185,11 +174,10 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
-                    Tree::Node(Box::new(Node {
-                        area: Area { anchor: point![0, 0], size: 4 },
+                    Tree::Node(Box::new(SquareNode {
+                        area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
                             Tree::Leaf(point![3, 3]),
                             Tree::Leaf(point![1, 3]),
@@ -209,17 +197,16 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
-                    Tree::Node(Box::new(Node {
-                        area: Area { anchor: point![0, 0], size: 8 },
+                    Tree::Node(Box::new(SquareNode {
+                        area: BinarySquare { anchor: point![0, 0], size: 8 },
                         children: [
                             Tree::Empty,
                             Tree::Leaf(point![3, 5]),
                             Tree::Empty,
-                            Tree::Node(Box::new(Node {
-                                area: Area { anchor: point![0, 0], size: 4 },
+                            Tree::Node(Box::new(SquareNode {
+                                area: BinarySquare { anchor: point![0, 0], size: 4 },
                                 children: [
                                     Tree::Leaf(point![3, 3]),
                                     Tree::Leaf(point![1, 3]),
@@ -244,8 +231,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty]
             }
         );
@@ -255,8 +241,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
                     Tree::Leaf(point![3, 1]),
                     Tree::Empty,
@@ -271,8 +256,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
                     Tree::Leaf(point![3, 1]),
                     Tree::Empty,
@@ -297,17 +281,16 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
-                    Tree::Node(Box::new(Node {
-                        area: Area { anchor: point![0, 0], size: 8 },
+                    Tree::Node(Box::new(SquareNode {
+                        area: BinarySquare { anchor: point![0, 0], size: 8 },
                         children: [
                             Tree::Empty,
                             Tree::Leaf(point![3, 5]),
                             Tree::Empty,
-                            Tree::Node(Box::new(Node {
-                                area: Area { anchor: point![0, 0], size: 4 },
+                            Tree::Node(Box::new(SquareNode {
+                                area: BinarySquare { anchor: point![0, 0], size: 4 },
                                 children: [
                                     Tree::Empty,
                                     Tree::Leaf(point![1, 3]),
@@ -329,11 +312,10 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
-                    Tree::Node(Box::new(Node {
-                        area: Area { anchor: point![0, 0], size: 4 },
+                    Tree::Node(Box::new(SquareNode {
+                        area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
                             Tree::Empty,
                             Tree::Leaf(point![1, 3]),
@@ -353,8 +335,7 @@ mod tests {
 
         assert_eq!(
             tree.root,
-            Node {
-                area: Area::global(),
+            GlobalNode {
                 children: [
                     Tree::Leaf(point![3, 1]),
                     Tree::Empty,
