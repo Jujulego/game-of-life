@@ -10,11 +10,12 @@ pub struct Query<'a, B: Holds<Point2<i32>>> {
 }
 
 impl<'a, B: Clone + Holds<Point2<i32>> + Overlaps<BinarySquare>> Query<'a, B> {
+    #[inline]
     pub fn new<N: Node>(bbox: &B, root: &'a N) -> Query<'a, B> {
-        let mut stack = Vec::new();
-        stack.extend(root.children());
-
-        Query { bbox: bbox.clone(), stack }
+        Query {
+            bbox: bbox.clone(),
+            stack: root.children().collect(),
+        }
     }
 }
 

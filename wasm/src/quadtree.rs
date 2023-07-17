@@ -113,9 +113,9 @@ mod tests {
         // Inserted points
         let mut iter = tree.iter();
 
-        assert_eq!(iter.next(), Some(&point![3, 1]));
-        assert_eq!(iter.next(), Some(&point![3, 3]));
         assert_eq!(iter.next(), Some(&point![3, 5]));
+        assert_eq!(iter.next(), Some(&point![3, 3]));
+        assert_eq!(iter.next(), Some(&point![3, 1]));
         assert_eq!(iter.next(), None);
     }
 
@@ -138,10 +138,10 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
-                    Tree::Leaf(point![3, 1]),
                     Tree::Empty,
                     Tree::Empty,
-                    Tree::Empty
+                    Tree::Empty,
+                    Tree::Leaf(point![3, 1])
                 ]
             }
         );
@@ -153,6 +153,9 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Node(Box::new(SquareNode {
                         area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
@@ -161,10 +164,7 @@ mod tests {
                             Tree::Leaf(point![3, 1]),
                             Tree::Empty
                         ]
-                    })),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
+                    }))
                 ]
             }
         );
@@ -176,18 +176,18 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Node(Box::new(SquareNode {
                         area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
-                            Tree::Leaf(point![3, 3]),
+                            Tree::Empty,
                             Tree::Leaf(point![1, 3]),
                             Tree::Leaf(point![3, 1]),
-                            Tree::Empty
+                            Tree::Leaf(point![3, 3]),
                         ]
-                    })),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
+                    }))
                 ]
             }
         );
@@ -199,26 +199,26 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Node(Box::new(SquareNode {
                         area: BinarySquare { anchor: point![0, 0], size: 8 },
                         children: [
-                            Tree::Empty,
-                            Tree::Leaf(point![3, 5]),
-                            Tree::Empty,
                             Tree::Node(Box::new(SquareNode {
                                 area: BinarySquare { anchor: point![0, 0], size: 4 },
                                 children: [
-                                    Tree::Leaf(point![3, 3]),
+                                    Tree::Empty,
                                     Tree::Leaf(point![1, 3]),
                                     Tree::Leaf(point![3, 1]),
-                                    Tree::Empty
+                                    Tree::Leaf(point![3, 3]),
                                 ]
                             })),
+                            Tree::Leaf(point![3, 5]),
+                            Tree::Empty,
+                            Tree::Empty,
                         ],
                     })),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
@@ -243,10 +243,10 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Leaf(point![3, 1]),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
@@ -258,10 +258,10 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Leaf(point![3, 1]),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
@@ -283,12 +283,12 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Node(Box::new(SquareNode {
                         area: BinarySquare { anchor: point![0, 0], size: 8 },
                         children: [
-                            Tree::Empty,
-                            Tree::Leaf(point![3, 5]),
-                            Tree::Empty,
                             Tree::Node(Box::new(SquareNode {
                                 area: BinarySquare { anchor: point![0, 0], size: 4 },
                                 children: [
@@ -298,11 +298,11 @@ mod tests {
                                     Tree::Empty
                                 ]
                             })),
+                            Tree::Leaf(point![3, 5]),
+                            Tree::Empty,
+                            Tree::Empty,
                         ],
                     })),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
@@ -314,6 +314,9 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Node(Box::new(SquareNode {
                         area: BinarySquare { anchor: point![0, 0], size: 4 },
                         children: [
@@ -323,9 +326,6 @@ mod tests {
                             Tree::Empty
                         ]
                     })),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
@@ -337,10 +337,10 @@ mod tests {
             tree.root,
             GlobalNode {
                 children: [
+                    Tree::Empty,
+                    Tree::Empty,
+                    Tree::Empty,
                     Tree::Leaf(point![3, 1]),
-                    Tree::Empty,
-                    Tree::Empty,
-                    Tree::Empty
                 ]
             }
         );
