@@ -8,10 +8,8 @@ use crate::quadtree::query::Query;
 use crate::quadtree::tree::Tree;
 
 mod area;
-mod division;
 mod iter;
 mod node;
-mod point;
 mod quarter;
 mod query;
 mod tree;
@@ -56,7 +54,7 @@ impl Quadtree {
     #[inline]
     pub fn insert(&mut self, point: Point2<i32>) {
         if self.root.area.holds(&point) {
-            self.root.insert(Tree::Leaf(point), &point);
+            self.root.insert(Tree::Leaf(point), &Area::wrapping(point));
         } else {
             panic!("Cannot insert point {point}, it is outside of root node");
         }

@@ -48,7 +48,7 @@ impl Universe {
 
     /// Builds a dead universe
     #[cfg(feature = "quadtree")]
-    pub fn dead(size: VectorInt2D) -> Universe {
+    pub fn dead() -> Universe {
         Universe {
             cells: Quadtree::new(),
             style: UniverseStyle::default(),
@@ -59,7 +59,7 @@ impl Universe {
 
     /// Builds a fixed universe
     pub fn fixed(size: VectorInt2D) -> Universe {
-        let mut universe = Universe::dead(size);
+        let mut universe = Universe::dead();
 
         for row in 0..size.dy() {
             for col in 0..size.dx() {
@@ -76,7 +76,7 @@ impl Universe {
 
     /// Builds a random universe
     pub fn random(size: VectorInt2D) -> Universe {
-        let mut universe = Universe::dead(size);
+        let mut universe = Universe::dead();
 
         for row in 0..size.dy() {
             for col in 0..size.dx() {

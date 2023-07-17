@@ -21,7 +21,7 @@ export default function Universe() {
   const { PointInt2D, Universe, UniverseStyle, VectorInt2D } = useWasmModule();
 
   // State
-  const [universe] = useState(() => Universe.dead(new VectorInt2D(256, 128)));
+  const [universe] = useState(() => Universe.dead());
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
 
   // Refs

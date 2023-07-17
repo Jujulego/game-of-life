@@ -2,7 +2,6 @@ use std::mem;
 use na::Point2;
 use py::Holds;
 use crate::quadtree::area::Area;
-use crate::quadtree::division::Division;
 use crate::quadtree::tree::Tree;
 
 /// Quadtree node
@@ -34,7 +33,7 @@ impl Node {
 
     /// Search greatest node matching area
     pub fn search(&self, area: &Area) -> Option<&Tree> {
-        let idx = self.area.quarter(area.anchor()) as usize;
+        let idx = self.area.quarter(&area.anchor) as usize;
         let tree = &self.children[idx];
 
         match tree {
@@ -57,8 +56,8 @@ impl Node {
     }
 
     /// Insert new element in node
-    pub fn insert<A: Division>(&mut self, element: Tree, at: &A) {
-        let idx = self.area.quarter(at.anchor()) as usize;
+    pub fn insert(&mut self, element: Tree, at: &Area) {
+        let idx = self.area.quarter(&at.anchor) as usize;
         let pos = unsafe { self.children.get_unchecked_mut(idx) };
 
         if &element == pos {
@@ -68,9 +67,10 @@ impl Node {
         match pos {
             Tree::Empty => *pos = element,
             &mut Tree::Leaf(pt) => {
-                let mut upper = Box::new(Node::new(Area::common(&pt, at)));
+                let area = Area::wrapping(pt);
+                let mut upper = Box::new(Node::new(Area::common(&area, at)));
 
-                upper.insert(mem::replace(pos, Tree::Empty), &pt);
+                upper.insert(mem::replace(pos, Tree::Empty), &area);
                 upper.insert(element, at);
 
                 *pos = Tree::Node(upper);
