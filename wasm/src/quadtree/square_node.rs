@@ -2,7 +2,6 @@ use std::slice::Iter;
 use na::Point2;
 use crate::quadtree::binary_square::BinarySquare;
 use crate::quadtree::node::Node;
-use crate::quadtree::quarter::Quarter;
 use crate::quadtree::tree::Tree;
 
 /// Quadtree node
@@ -14,6 +13,7 @@ pub struct SquareNode {
 
 impl SquareNode {
     /// Create a new empty node
+    #[inline]
     pub fn new(area: BinarySquare) -> SquareNode {
         SquareNode {
             area,
@@ -24,22 +24,19 @@ impl SquareNode {
 
 impl Node for SquareNode {
     #[inline]
-    fn quarter(&self, point: &Point2<i32>) -> Quarter {
-        self.area.quarter(point)
-    }
-
-    #[inline]
     fn children(&self) -> Iter<'_, Tree> {
         self.children.iter()
     }
 
     #[inline]
-    fn get_child(&self, quarter: Quarter) -> &Tree {
-        unsafe { self.children.get_unchecked(quarter as usize) }
+    fn child_holding(&self, point: &Point2<i32>) -> &Tree {
+        let idx = self.area.quarter(point) as usize;
+        unsafe { self.children.get_unchecked(idx) }
     }
 
     #[inline]
-    fn get_child_mut(&mut self, quarter: Quarter) -> &mut Tree {
-        unsafe { self.children.get_unchecked_mut(quarter as usize) }
+    fn child_holding_mut(&mut self, point: &Point2<i32>) -> &mut Tree {
+        let idx = self.area.quarter(point) as usize;
+        unsafe { self.children.get_unchecked_mut(idx) }
     }
 }

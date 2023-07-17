@@ -1,7 +1,7 @@
 use std::slice::Iter;
 use na::Point2;
 use crate::quadtree::node::Node;
-use crate::quadtree::quarter::{global_quarter, Quarter};
+use crate::quadtree::quarter::global_quarter;
 use crate::quadtree::tree::Tree;
 
 /// Quadtree global node
@@ -12,6 +12,7 @@ pub struct GlobalNode {
 
 impl GlobalNode {
     /// Create a new empty node
+    #[inline]
     pub fn new() -> GlobalNode {
         GlobalNode {
             children: [Tree::Empty, Tree::Empty, Tree::Empty, Tree::Empty],
@@ -19,24 +20,29 @@ impl GlobalNode {
     }
 }
 
-impl Node for GlobalNode {
+// Utils
+impl Default for GlobalNode {
     #[inline]
-    fn quarter(&self, point: &Point2<i32>) -> Quarter {
-        global_quarter(point)
+    fn default() -> Self {
+        Self::new()
     }
+}
 
+impl Node for GlobalNode {
     #[inline]
     fn children(&self) -> Iter<'_, Tree> {
         self.children.iter()
     }
 
     #[inline]
-    fn get_child(&self, quarter: Quarter) -> &Tree {
-        unsafe { self.children.get_unchecked(quarter as usize) }
+    fn child_holding(&self, point: &Point2<i32>) -> &Tree {
+        let idx = global_quarter(point) as usize;
+        unsafe { self.children.get_unchecked(idx) }
     }
 
     #[inline]
-    fn get_child_mut(&mut self, quarter: Quarter) -> &mut Tree {
-        unsafe { self.children.get_unchecked_mut(quarter as usize) }
+    fn child_holding_mut(&mut self, point: &Point2<i32>) -> &mut Tree {
+        let idx = global_quarter(point) as usize;
+        unsafe { self.children.get_unchecked_mut(idx) }
     }
 }

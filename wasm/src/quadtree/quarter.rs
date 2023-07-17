@@ -10,18 +10,6 @@ pub enum Quarter {
     SouthWest = 0b00,
 }
 
-pub fn quarter(origin: &Point2<i32>, point: &Point2<i32>) -> Quarter {
-    if point.x >= origin.x && point.y >= origin.y {
-        Quarter::NorthEast
-    } else if point.x >= origin.x {
-        Quarter::SouthEast
-    } else if point.y >= origin.y {
-        Quarter::NorthWest
-    } else {
-        Quarter::SouthWest
-    }
-}
-
 pub fn global_quarter(point: &Point2<i32>) -> Quarter {
     let mut quarter = 0u8;
 

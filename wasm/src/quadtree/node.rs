@@ -3,22 +3,20 @@ use std::slice::Iter;
 use na::Point2;
 use py::Holds;
 use crate::quadtree::binary_square::BinarySquare;
-use crate::quadtree::quarter::Quarter;
 use crate::quadtree::square_node::SquareNode;
 use crate::quadtree::tree::Tree;
 
 /// Quadtree node
 pub trait Node {
-    fn quarter(&self, point: &Point2<i32>) -> Quarter;
-
     fn children(&self) -> Iter<'_, Tree>;
 
-    fn get_child(&self, quarter: Quarter) -> &Tree;
-    fn get_child_mut(&mut self, quarter: Quarter) -> &mut Tree;
+    fn child_holding(&self, point: &Point2<i32>) -> &Tree;
+
+    fn child_holding_mut(&mut self, point: &Point2<i32>) -> &mut Tree;
 
     /// Test if node contains point
     fn has(&self, point: &Point2<i32>) -> bool {
-        match self.get_child(self.quarter(point)) {
+        match self.child_holding(point) {
             Tree::Empty => false,
             Tree::Leaf(pt) => point == pt,
             Tree::Node(child) => child.area.holds(point) && child.has(point),
@@ -27,7 +25,7 @@ pub trait Node {
 
     /// Search greatest node matching area
     fn search(&self, area: &BinarySquare) -> Option<&Tree> {
-        let tree = self.get_child(self.quarter(&area.anchor));
+        let tree = self.child_holding(&area.anchor);
 
         match tree {
             Tree::Empty => None,
@@ -50,7 +48,7 @@ pub trait Node {
 
     /// Insert new element in node
     fn insert(&mut self, element: Tree, at: &BinarySquare) {
-        let pos = self.get_child_mut(self.quarter(&at.anchor));
+        let pos = self.child_holding_mut(&at.anchor);
 
         if &element == pos {
             return;
@@ -85,7 +83,7 @@ pub trait Node {
 
     /// Removes point from node
     fn remove(&mut self, point: &Point2<i32>) {
-        let pos = self.get_child_mut(self.quarter(point));
+        let pos = self.child_holding_mut(point);
 
         match pos {
             Tree::Empty => (),

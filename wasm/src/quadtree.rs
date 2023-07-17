@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use na::Point2;
 use py::{Holds, Overlaps};
 use crate::quadtree::binary_square::BinarySquare;
-pub use crate::quadtree::global_node::GlobalNode;
+use crate::quadtree::global_node::GlobalNode;
 use crate::quadtree::iter::Iter;
 use crate::quadtree::node::Node;
 use crate::quadtree::query::Query;

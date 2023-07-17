@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 use std::mem;
-use std::ops::Range;
+use std::ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive};
 use na::{Point, point, Point2};
 use py::{Holds, Overlaps, PointBounds};
 use py::traits::DimensionBounds;
@@ -119,10 +119,53 @@ impl Holds<BinarySquare> for BinarySquare {
 }
 
 impl Overlaps<BinarySquare> for Range<Point2<i32>> {
+    #[inline]
     fn overlaps(&self, lhs: &BinarySquare) -> bool {
-        let size = lhs.size as i32;
+        self.overlaps(&Range::from(lhs))
+    }
+}
 
-        self.start.x < (lhs.anchor.x + size) && self.start.y < (lhs.anchor.y + size) && self.end.x >= lhs.anchor.x && self.end.y >= lhs.anchor.y
+impl Overlaps<BinarySquare> for RangeFrom<Point2<i32>> {
+    #[inline]
+    fn overlaps(&self, lhs: &BinarySquare) -> bool {
+        self.overlaps(&Range::from(lhs))
+    }
+}
+
+impl Overlaps<BinarySquare> for RangeFull {
+    #[inline]
+    fn overlaps(&self, _: &BinarySquare) -> bool {
+        true
+    }
+}
+
+impl Overlaps<BinarySquare> for RangeInclusive<Point2<i32>> {
+    #[inline]
+    fn overlaps(&self, lhs: &BinarySquare) -> bool {
+        self.overlaps(&Range::from(lhs))
+    }
+}
+
+impl Overlaps<BinarySquare> for RangeTo<Point2<i32>> {
+    #[inline]
+    fn overlaps(&self, lhs: &BinarySquare) -> bool {
+        self.overlaps(&Range::from(lhs))
+    }
+}
+
+impl Overlaps<BinarySquare> for RangeToInclusive<Point2<i32>> {
+    #[inline]
+    fn overlaps(&self, lhs: &BinarySquare) -> bool {
+        self.overlaps(&Range::from(lhs))
+    }
+}
+
+// Conversion
+impl From<&BinarySquare> for Range<Point2<i32>> {
+    fn from(value: &BinarySquare) -> Self {
+        let size = value.size as i32;
+
+        value.anchor..(point![value.anchor.x + size, value.anchor.y + size])
     }
 }
 
