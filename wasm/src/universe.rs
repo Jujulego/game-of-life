@@ -9,22 +9,7 @@ use crate::binary_tree::BinaryTree;
 use crate::quadtree::GlobalQuadtree;
 use crate::universe_style::UniverseStyle;
 
-#[cfg(feature = "quadtree")]
-use crate::quadtree::Quadtree;
-
 /// Life universe
-#[cfg(feature = "binary-tree")]
-#[derive(Clone)]
-#[wasm_bindgen]
-pub struct Universe {
-    cells: BinaryTree,
-    updates: BinaryTree,
-    size: Vector2<usize>,
-    style: UniverseStyle,
-}
-
-/// Life universe
-#[cfg(feature = "quadtree")]
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Universe {
@@ -37,21 +22,9 @@ pub struct Universe {
 #[wasm_bindgen]
 impl Universe {
     /// Builds a dead universe
-    #[cfg(feature = "binary-tree")]
-    pub fn dead(width: usize, height: usize) -> Universe {
-        Universe {
-            cells: BinaryTree::new(),
-            updates: BinaryTree::new(),
-            size: vector![width, height],
-            style: UniverseStyle::default(),
-        }
-    }
-
-    /// Builds a dead universe
-    #[cfg(feature = "quadtree")]
     pub fn dead() -> Universe {
         Universe {
-            cells: Quadtree::new(),
+            cells: GlobalQuadtree::new(),
             style: UniverseStyle::default(),
             updates: BinaryTree::new(),
             update_area: BBox::default(),
@@ -211,25 +184,6 @@ impl Universe {
     }
 
     /// Get cell state and neighbor count
-    #[cfg(feature = "binary-tree")]
-    fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
-        let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
-        let mut neighbors = 0;
-        let mut is_alive = false;
-
-        for pt in self.cells.query(area) {
-            if pt == point {
-                is_alive = true;
-            } else {
-                neighbors += 1;
-            }
-        }
-
-        (is_alive, neighbors)
-    }
-
-    /// Get cell state and neighbor count
-    #[cfg(feature = "quadtree")]
     fn cell_state(&self, point: &Point2<i32>) -> (bool, usize) {
         let area = point![point.x - 1, point.y - 1]..point![point.x + 2, point.y + 2];
         let mut neighbors = 0;
