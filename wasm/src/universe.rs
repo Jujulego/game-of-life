@@ -1,13 +1,14 @@
 use std::mem;
+use std::ops::Bound::{Excluded, Included};
 use js_sys::Math;
 use na::{distance, point, Point2};
 use py::{BBox, Holds, Walkable};
 use py::wasm::{PointInt2D, VectorInt2D};
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
-use crate::binary_tree::BinaryTree;
 use crate::quadtree::GlobalQuadtree;
 use crate::universe_style::UniverseStyle;
+use crate::update_list::UpdateList;
 
 /// Life universe
 #[derive(Clone)]
@@ -15,8 +16,7 @@ use crate::universe_style::UniverseStyle;
 pub struct Universe {
     cells: GlobalQuadtree,
     style: UniverseStyle,
-    updates: BinaryTree,
-    update_area: BBox<i32, 2>,
+    updates: UpdateList,
 }
 
 #[wasm_bindgen]
@@ -26,8 +26,7 @@ impl Universe {
         Universe {
             cells: GlobalQuadtree::new(),
             style: UniverseStyle::default(),
-            updates: BinaryTree::new(),
-            update_area: BBox::default(),
+            updates: UpdateList::new(),
         }
     }
 
@@ -88,11 +87,11 @@ impl Universe {
 
     /// Compute next state
     pub fn tick(&mut self, ctx: &CanvasRenderingContext2d) {
+        let updates = UpdateList::inside(*self.updates.area());
         let old = Universe {
             cells: self.cells.clone(),
             style: self.style.clone(),
-            updates: mem::replace(&mut self.updates, BinaryTree::new()),
-            update_area: BBox::default(),
+            updates: mem::replace(&mut self.updates, updates),
         };
 
         for &cell in old.updates.iter() {
@@ -133,17 +132,17 @@ impl Universe {
     }
 
     pub fn set_update_area(&mut self, start: &PointInt2D, end: &PointInt2D) {
-        let start = start.as_ref();
+        let start = *start.as_ref();
         let end = *end.as_ref();
 
-        let old = mem::replace(&mut self.update_area, BBox::from_points(start, &end));
+        let old = self.updates.change_area((Included(start), Excluded(end)));
 
         for cell in self.cells.iter() {
             if !old.holds(cell) {
                 let area = point![cell.x - 1, cell.y - 1]..=point![cell.x + 1, cell.y + 1];
 
                 area.walk().unwrap().iter()
-                    .for_each(|pt| self.updates.insert(pt));
+                    .for_each(|pt| self.updates.register(pt));
             };
         }
     }
@@ -160,27 +159,16 @@ impl Universe {
 }
 
 impl Universe {
-    /// Register cells to update
-    fn register_with_neighbors(&mut self, point: &Point2<i32>) {
-        if !self.update_area.holds(point) {
-            return;
-        }
-        let area = point![point.x - 1, point.y - 1]..=point![point.x + 1, point.y + 1];
-
-        area.walk().unwrap().iter()
-            .for_each(|pt| self.updates.insert(pt));
-    }
-
     /// Set cell at given point alive
     fn set_alive(&mut self, point: Point2<i32>) {
         self.cells.insert(point);
-        self.register_with_neighbors(&point);
+        self.updates.register_with_neighbors(point);
     }
 
     /// Set cell at given point dead
     fn set_dead(&mut self, point: Point2<i32>) {
-        self.register_with_neighbors(&point);
         self.cells.remove(&point);
+        self.updates.register_with_neighbors(point);
     }
 
     /// Get cell state and neighbor count
