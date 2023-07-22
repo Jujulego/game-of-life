@@ -1,9 +1,12 @@
+import { NoSsr } from '@mui/base';
 import Universe from '@/app/Universe';
 
 export default function Home() {
   return (
     <main>
-      { typeof document !== 'undefined' && <Universe /> }
+      <NoSsr>
+        <Universe />
+      </NoSsr>
     </main>
   )
 }
