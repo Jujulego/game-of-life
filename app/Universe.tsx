@@ -1,6 +1,6 @@
 'use client'
 
-import { MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { MouseEvent, TouchEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useWasmModule } from '@/hooks/useWasmModule';
 
 // Constants
@@ -95,6 +95,23 @@ export default function Universe() {
     }
   }, [context, universe]);
 
+  const handleTouch = useCallback((event: TouchEvent<HTMLCanvasElement>) => {
+    const now = performance.now();
+
+    if (context && now - last.current > 10) {
+      for (let idx = 0; idx < event.changedTouches.length; idx++) {
+        const touch = event.changedTouches[idx];
+        universe.insert_around(context, new PointInt2D(touch.clientX / 5, touch.clientY / 5), 3);
+      }
+      last.current = now;
+    }
+  }, [context, universe]);
+
   // Render
-  return <canvas ref={canvas} onMouseMove={handleMove} style={{ display: 'block' }} />;
+  return <canvas
+    ref={canvas}
+    onMouseMove={handleMove}
+    onTouchMove={handleTouch}
+    style={{ display: 'block' }}
+  />;
 }
