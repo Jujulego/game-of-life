@@ -61,6 +61,15 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       
+      - name: Setup Rust stable
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Build wasm module
         run: yarn run build:wasm
       
