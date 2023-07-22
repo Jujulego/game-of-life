@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:wasm": "wasm-pack build --weak-refs ./wasm",
     "build": "next build",
-    "build:wasm": "wasm-pack build --weak-refs ./wasm",
+    "build:wasm": "wasm-pack build --weak-refs --out-name index ./wasm",
     "start": "next start",
     "lint": "next lint"
   },
