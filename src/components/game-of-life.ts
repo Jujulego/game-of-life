@@ -7,4 +7,3 @@ export default define({
     <h1>Hello World!</h1>
   `
 });
-
