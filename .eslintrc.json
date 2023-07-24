@@ -1,0 +1,30 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "root": true,
+  "reportUnusedDisableDirectives": true,
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "ignorePatterns": [
+    "coverage/**",
+    "demo/**",
+    "dist/**",
+    "wasm/pkg/**"
+  ],
+  "overrides": [
+    {
+      "files": "**/*.{js,jsx,ts,tsx}",
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "env": {
+        "node": true
+      },
+      "rules": {
+        "quotes": ["error", "single"],
+        "semi": ["error", "always"]
+      }
+    }
+  ]
+}

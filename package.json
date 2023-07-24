@@ -1,11 +1,18 @@
 {
-  "name": "game-of-life",
+  "name": "@jujulego/game-of-life",
   "private": true,
   "workspaces": [
     "demo"
   ],
   "scripts": {
-    "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm"
+    "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
+    "lint": "eslint -c .eslintrc.json ."
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "6.1.0",
+    "@typescript-eslint/parser": "6.1.0",
+    "eslint": "8.45.0",
+    "typescript": "5.1.6"
   },
   "packageManager": "yarn@3.6.0"
 }
