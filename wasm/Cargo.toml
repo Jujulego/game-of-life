@@ -1,7 +1,7 @@
 [package]
-name = "wasm"
+name = "game-of-life-wasm"
 description = "Game of life wasm module"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["julien.capellari@gmail.com"]
 edition = "2021"
 

@@ -1,11 +1,13 @@
 {
   "name": "game-of-life",
-  "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "demo"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:wasm": "wasm-pack build --weak-refs --out-name index ./wasm",
+    "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
     "start": "next start",
     "lint": "next lint"
   },
@@ -18,7 +20,7 @@
     "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@types/node": "20.3.1",
+    "@types/node": "18.17.0",
     "@types/react": "18.2.13",
     "@types/react-dom": "18.2.6",
     "eslint": "8.43.0",

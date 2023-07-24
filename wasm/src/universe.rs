@@ -2,7 +2,7 @@ use std::mem;
 use std::ops::Bound::{Excluded, Included};
 use js_sys::Math;
 use na::{distance, point, Point2};
-use py::{BBox, Holds, Walkable};
+use py::{Holds, Walkable};
 use py::wasm::{PointInt2D, VectorInt2D};
 use wasm_bindgen::prelude::*;
 use web_sys::CanvasRenderingContext2d;
