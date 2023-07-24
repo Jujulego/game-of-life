@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { MouseEvent, TouchEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useWasmModule } from '@/hooks/useWasmModule';

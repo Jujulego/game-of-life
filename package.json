@@ -5,27 +5,7 @@
     "demo"
   ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@jujulego/event-tree": "3.1.0",
-    "@jujulego/utils": "1.4.3",
-    "@mui/base": "5.0.0-beta.8",
-    "next": "13.4.12",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "18.17.0",
-    "@types/react": "18.2.13",
-    "@types/react-dom": "18.2.6",
-    "eslint": "8.43.0",
-    "eslint-config-next": "13.4.12",
-    "typescript": "5.1.6"
+    "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm"
   },
   "packageManager": "yarn@3.6.0"
 }

@@ -1,7 +1,7 @@
 import { queryfy } from '@jujulego/utils';
 import { useQuery } from '@/hooks/useQuery';
 
-const wasm$ = queryfy(import('@/wasm/pkg'));
+const wasm$ = queryfy(import('../../wasm/pkg'));
 
 wasm$.on('done', ({ data: mod  }) => mod.set_panic_hook());
 
