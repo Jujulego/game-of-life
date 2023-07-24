@@ -5,14 +5,23 @@
     "demo"
   ],
   "scripts": {
+    "build": "webpack",
+    "build:prod": "webpack --config webpack.prod.ts",
     "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
     "lint": "eslint -c .eslintrc.json ."
   },
   "devDependencies": {
+    "@swc/core": "1.3.70",
     "@typescript-eslint/eslint-plugin": "6.1.0",
     "@typescript-eslint/parser": "6.1.0",
     "eslint": "8.45.0",
-    "typescript": "5.1.6"
+    "fork-ts-checker-webpack-plugin": "8.0.0",
+    "swc-loader": "0.2.3",
+    "ts-node": "10.9.1",
+    "typescript": "5.1.6",
+    "webpack": "5.88.2",
+    "webpack-cli": "5.1.4",
+    "webpack-merge": "5.9.0"
   },
   "packageManager": "yarn@3.6.0"
 }
