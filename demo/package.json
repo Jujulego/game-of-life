@@ -8,6 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@jujulego/game-of-life": "workspace:*",
     "@jujulego/utils": "1.4.3",
     "@mui/base": "5.0.0-beta.8",
     "@types/node": "18.17.0",

@@ -1,1 +1,1 @@
-export const toto = 'toto';
+import './components/game-of-life';

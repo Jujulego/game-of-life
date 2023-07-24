@@ -4,14 +4,23 @@
   "workspaces": [
     "demo"
   ],
+  "files": [
+    "./dist"
+  ],
+  "main": "./dist/index.js",
+  "exports": "./dist/index.js",
   "scripts": {
     "build": "webpack",
     "build:prod": "webpack --config webpack.prod.ts",
     "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
     "lint": "eslint -c .eslintrc.json ."
   },
+  "dependencies": {
+    "hybrids": "^8.2.2"
+  },
   "devDependencies": {
     "@swc/core": "1.3.70",
+    "@types/node": "18.17.0",
     "@typescript-eslint/eslint-plugin": "6.1.0",
     "@typescript-eslint/parser": "6.1.0",
     "eslint": "8.45.0",

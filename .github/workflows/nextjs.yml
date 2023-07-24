@@ -98,6 +98,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      - name: Build library
+        run: yarn build:prod
+        working-directory: demo
+
       - name: Build with Next.js
         run: yarn next build
         working-directory: demo

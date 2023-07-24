@@ -19,23 +19,12 @@ const commonConfig: Configuration = {
       keep: /(\.d\.ts|\.tsbuildinfo)$/
     },
   },
-  optimization: {
-    runtimeChunk: 'single',
-    moduleIds: 'deterministic',
-    splitChunks: {
-      chunks: 'all'
-    }
-  },
   module: {
     rules: [
       {
         test: /\.(js|jsx|ts|tsx)$/,
         exclude: /[\\/]node_modules[\\/]/,
         use: 'swc-loader',
-      },
-      {
-        test: /\.json$/,
-        type: 'json'
       }
     ]
   },
