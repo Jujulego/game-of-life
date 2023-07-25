@@ -7,6 +7,11 @@
       "tsx": false,
       "decorators": false,
       "dynamicImport": true
+    },
+    "paths": {
+      "@/src": [
+        "./src"
+      ]
     }
   },
   "module": {
@@ -14,6 +19,10 @@
   },
   "sourceMaps": true,
   "env": {
-    "targets": "defaults"
+    "targets": [
+      "defaults",
+      "not ie 11",
+      "maintained node versions and not node < 16"
+    ]
   }
 }

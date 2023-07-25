@@ -13,19 +13,24 @@
     "build": "webpack",
     "build:prod": "webpack --config webpack.prod.ts",
     "build:wasm": "wasm-pack build --out-name index --weak-refs ./wasm",
-    "lint": "eslint -c .eslintrc.json ."
+    "lint": "eslint -c .eslintrc.json .",
+    "test": "jest"
   },
   "dependencies": {
+    "@jujulego/event-tree": "^3.1.0",
     "hybrids": "^8.2.2"
   },
   "devDependencies": {
     "@swc/core": "1.3.70",
+    "@types/jest": "29.5.3",
     "@types/node": "18.17.0",
     "@typescript-eslint/eslint-plugin": "6.1.0",
     "@typescript-eslint/parser": "6.1.0",
     "eslint": "8.45.0",
     "fork-ts-checker-webpack-plugin": "8.0.0",
+    "jest": "29.6.1",
     "swc-loader": "0.2.3",
+    "ts-jest": "29.1.1",
     "ts-node": "10.9.1",
     "typescript": "5.1.6",
     "webpack": "5.88.2",
