@@ -909,12 +909,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@jujulego/utils@npm:1.4.3":
-  version: 1.4.3
-  resolution: "@jujulego/utils@npm:1.4.3"
+"@jujulego/utils@npm:1.4.5":
+  version: 1.4.5
+  resolution: "@jujulego/utils@npm:1.4.5"
   dependencies:
     "@jujulego/event-tree": ^3.0.0
-  checksum: 5b8bf3c52da3b2bc0ea684541947c565e9f05d274dffee1742e6309a3a896e3c4d6094ffa48a5d8aaccc925da3d80fb78be0eeb902ccd4e33d72a5d49559cf20
+  checksum: 9fd68326bb32a78a360c557b00a71816274ab77a9abd555ee6a88b4f55de0f88a6a99c39402f6f197aae4420824115822d1b45f5d2cd2144d97d462e145dd6a0
   languageName: node
   linkType: hard
 
@@ -2892,7 +2892,7 @@ __metadata:
   resolution: "demo@workspace:demo"
   dependencies:
     "@jujulego/game-of-life": "workspace:*"
-    "@jujulego/utils": 1.4.3
+    "@jujulego/utils": 1.4.5
     "@mui/base": 5.0.0-beta.8
     "@types/node": 18.17.0
     "@types/react": 18.2.15
