@@ -1462,12 +1462,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:18.2.7":
-  version: 18.2.7
-  resolution: "@types/react-dom@npm:18.2.7"
+"@types/react-dom@npm:18.2.22":
+  version: 18.2.22
+  resolution: "@types/react-dom@npm:18.2.22"
   dependencies:
     "@types/react": "*"
-  checksum: e02ea908289a7ad26053308248d2b87f6aeafd73d0e2de2a3d435947bcea0422599016ffd1c3e38ff36c42f5e1c87c7417f05b0a157e48649e4a02f21727d54f
+  checksum: 83bb3ddcd7894f20a9a6cbc2befe75d8b76984734020c455b4c50cad625a4025250d8e1d247ef6264e484d47d5a94f2dd11f77c1dcac6a5de998cb447d85b720
   languageName: node
   linkType: hard
 
@@ -1480,7 +1480,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:18.2.15":
+"@types/react@npm:*":
   version: 18.2.15
   resolution: "@types/react@npm:18.2.15"
   dependencies:
@@ -1488,6 +1488,16 @@ __metadata:
     "@types/scheduler": "*"
     csstype: ^3.0.2
   checksum: 36989f638201bfe2f4110b06c119180f6df9c0e13d7060481e82e7a745f81745a01ae543c478a25b61e0767cb52e82da2ad5b0dedacabf99339e523d06176705
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:18.2.73":
+  version: 18.2.73
+  resolution: "@types/react@npm:18.2.73"
+  dependencies:
+    "@types/prop-types": "*"
+    csstype: ^3.0.2
+  checksum: 0921d3e3286f11365e796f01eff4fb64de315c68f569e0bbfdaa7680dc4b774c7e8dc416d72d77f7f16a0c2075048429386a55bbfd43ac507d1dddc8d44142e7
   languageName: node
   linkType: hard
 
@@ -2895,8 +2905,8 @@ __metadata:
     "@jujulego/utils": 1.4.3
     "@mui/base": 5.0.0-beta.8
     "@types/node": 18.17.0
-    "@types/react": 18.2.15
-    "@types/react-dom": 18.2.7
+    "@types/react": 18.2.73
+    "@types/react-dom": 18.2.22
     autoprefixer: 10.4.14
     eslint: 8.45.0
     eslint-config-next: 13.4.12
