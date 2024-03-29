@@ -14,7 +14,7 @@ default = ["console_error_panic_hook"]
 [dependencies]
 console_error_panic_hook = { version = "0.1.7", optional = true }
 js-sys = "0.3.64"
-nalgebra = "0.32.2"
+nalgebra = "0.32.5"
 num-traits = "0.2.15"
 pythagore = { version = "0.8.3", features = ["wasm-vector-int", "wasm-point-int"] }
 wasm-bindgen = "0.2.86"
