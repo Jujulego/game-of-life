@@ -4161,11 +4161,11 @@ __metadata:
   linkType: hard
 
 "hybrids@npm:^8.2.2":
-  version: 8.2.2
-  resolution: "hybrids@npm:8.2.2"
+  version: 8.2.23
+  resolution: "hybrids@npm:8.2.23"
   bin:
     hybrids: cli/index.js
-  checksum: 3727054b8144298375bf1131616b3fc03c6de31f2fc81ba55dd0edef7d8c035c2636dbe4cb307968c2e181079ef7fa64e46f410de2401f7dfb9c78abb3228d4b
+  checksum: 0e7772dee1c3ef259e8d1c3912a98f4f8740977463c4721e3f06d183e0df4f1d54825dd977f152d43f56809fdad1706167346996414cd522cac5e9fca1de9c31
   languageName: node
   linkType: hard
 
